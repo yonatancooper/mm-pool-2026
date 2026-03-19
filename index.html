@@ -750,8 +750,9 @@ async function fetchESPNScores() {
     if (!data.games) throw new Error("No games data");
 
     let hasLive = false;
-    const boxScoreGameIds = []; // games needing box score fetch (live OR final with our players)
-    const finalizedTeams = []; // teams whose games just went final this cycle
+    const liveGameIds = [];      // PRIORITY: live games with our players
+    const finalGameIds = [];     // SECONDARY: newly-final games with our players
+    const finalizedTeams = new Set(); // teams whose games just went final
 
     // Track which games we've already finalized to avoid double-counting
     if (!state._finalizedGameIds) state._finalizedGameIds = [];
@@ -778,7 +779,6 @@ async function fetchESPNScores() {
         const oppName = isHome ? (awayName || game.away.name) : (homeName || game.home.name);
 
         if (isLive) {
-          // Skip eliminated teams for live games (shouldn't happen, but guard)
           if (ts.status === "eliminated") continue;
           hasLive = true;
           let winP = null;
@@ -797,16 +797,14 @@ async function fetchESPNScores() {
             espnWinProb: winP,
           };
 
-          if (hasOurTeam(teamName)) boxScoreGameIds.push(game.id);
+          if (hasOurTeam(teamName)) liveGameIds.push(game.id);
 
         } else if (isFinal) {
           const alreadyFinalized = state._finalizedGameIds.includes(game.id + "_" + teamName);
 
           if (!alreadyFinalized) {
-            // This game just ended (or we're seeing it final for the first time)
             const won = teamScore > oppScore;
 
-            // Only update status/gamesPlayed if not already processed
             if (ts.status !== "eliminated") {
               if (won) {
                 ts.gamesPlayed = (ts.gamesPlayed || 0) + 1;
@@ -816,27 +814,37 @@ async function fetchESPNScores() {
             }
             ts.liveGame = null;
 
-            // Mark as finalized so we don't re-process next cycle
             state._finalizedGameIds.push(game.id + "_" + teamName);
 
-            // Need box score to get final player point totals (even for eliminated teams!)
             if (hasOurTeam(teamName)) {
-              finalizedTeams.push(teamName);
-              boxScoreGameIds.push(game.id);
+              finalizedTeams.add(teamName);
+              finalGameIds.push(game.id);
             }
           }
         }
       }
     }
 
-    // Fetch box scores for all relevant games (live AND newly finalized)
-    const uniqueIds = [...new Set(boxScoreGameIds)];
-    for (const gid of uniqueIds.slice(0, 8)) {
+    // SAVE scoreboard-level updates immediately (team scores, statuses, win probs)
+    // This ensures team-level data persists even if box score fetches fail
+    saveState();
+    render();
+
+    // Fetch box scores: LIVE GAMES FIRST (priority), then finals
+    const liveUnique = [...new Set(liveGameIds)];
+    const finalUnique = [...new Set(finalGameIds)];
+    console.log(`[MM Pool] Live games: ${liveUnique.length}, Final games: ${finalUnique.length}`);
+
+    // Helper: fetch one box score and update player points
+    async function fetchAndApplyBoxScore(gameId, isFinalGame) {
       try {
-        const bResp = await fetch(`${WORKER_URL}/boxscore?gameId=${gid}`, {
-          signal: AbortSignal.timeout(8000)
+        const bResp = await fetch(`${WORKER_URL}/boxscore?gameId=${gameId}`, {
+          signal: AbortSignal.timeout(10000)
         });
-        if (!bResp.ok) continue;
+        if (!bResp.ok) {
+          console.warn(`[MM Pool] Box score ${gameId} returned ${bResp.status}`);
+          return;
+        }
         const bData = await bResp.json();
 
         for (const ps of (bData.players || [])) {
@@ -847,20 +855,33 @@ async function fetchESPNScores() {
 
           const playerState = state.players[ourPlayerKey];
 
-          if (finalizedTeams.includes(teamName)) {
+          if (isFinalGame && finalizedTeams.has(teamName)) {
             // Game is FINAL: move points to completedPts, clear livePts
-            playerState.completedPts = playerState.completedPts || [];
+            if (!Array.isArray(playerState.completedPts)) playerState.completedPts = [];
             playerState.completedPts.push(ps.pts);
             playerState.livePts = 0;
-          } else {
+            console.log(`[MM Pool] Final: ${ps.name} → ${ps.pts}pts → completedPts`);
+          } else if (!isFinalGame) {
             // Game is LIVE: update livePts
             playerState.livePts = ps.pts;
           }
         }
-      } catch (e) { /* skip failed box score */ }
+      } catch (e) {
+        console.warn(`[MM Pool] Box score ${gameId} failed:`, e.message);
+      }
     }
 
-    // Keep _finalizedGameIds from growing forever (trim to last 200)
+    // Fetch live box scores first (these are time-sensitive)
+    for (const gid of liveUnique) {
+      await fetchAndApplyBoxScore(gid, false);
+    }
+
+    // Then fetch final box scores (one-time operation)
+    for (const gid of finalUnique) {
+      await fetchAndApplyBoxScore(gid, true);
+    }
+
+    // Trim _finalizedGameIds to prevent unbounded growth
     if (state._finalizedGameIds.length > 200) {
       state._finalizedGameIds = state._finalizedGameIds.slice(-100);
     }
