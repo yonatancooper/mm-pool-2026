@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 March Madness Pool</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e17;--surface:#131a2b;--surface2:#1a2340;--surface3:#222d4a;
+  --text:#e8ecf4;--text2:#8892a8;--text3:#5a6480;
+  --accent:#ff6b35;--accent2:#ff8f65;--green:#2ecc71;--green2:#27ae60;
+  --red:#e74c3c;--red2:#c0392b;--yellow:#f1c40f;--blue:#3498db;
+  --gold:#ffd700;--silver:#c0c0c0;--bronze:#cd7f32;
+  --live-pulse:#ff4444;
+  --rank1:linear-gradient(135deg,#ffd700 0%,#ffaa00 100%);
+  --rank2:linear-gradient(135deg,#c0c0c0 0%,#a0a0a0 100%);
+  --rank3:linear-gradient(135deg,#cd7f32 0%,#a0622a 100%);
+}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.header{background:linear-gradient(180deg,#1a2340 0%,#0d1220 100%);border-bottom:3px solid var(--accent);padding:16px 24px;position:sticky;top:0;z-index:100}
+.header-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.title{font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;text-transform:uppercase;letter-spacing:2px;background:linear-gradient(90deg,#ff6b35,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.title span{font-size:14px;font-weight:400;letter-spacing:1px;display:block;-webkit-text-fill-color:var(--text2)}
+.status-bar{display:flex;align-items:center;gap:16px;font-size:13px;color:var(--text2)}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+.status-dot.live{background:var(--live-pulse);animation:pulse 1.5s infinite}
+.status-dot.idle{background:var(--green)}
+.status-dot.off{background:var(--text3)}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,68,68,0.7)}50%{opacity:0.8;box-shadow:0 0 0 6px rgba(255,68,68,0)}}
+.btn{font-family:'Source Sans 3',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;border:1px solid var(--surface3);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .2s}
+.btn:hover{background:var(--surface3);color:var(--text)}
+.btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.container{max-width:1100px;margin:0 auto;padding:20px}
+.tabs{display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--surface3);padding-bottom:12px}
+.tab{font-family:'Oswald',sans-serif;font-size:15px;font-weight:500;text-transform:uppercase;letter-spacing:1.5px;padding:8px 16px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;transition:all .2s}
+.tab:hover{color:var(--text2)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+/* Standings */
+.standings-table{width:100%;border-collapse:separate;border-spacing:0 4px}
+.standings-table th{font-family:'Oswald',sans-serif;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);text-align:left;padding:8px 12px}
+.standings-table th.r{text-align:right}
+.standings-row{cursor:pointer;transition:all .15s}
+.standings-row td{padding:12px;background:var(--surface);border:none}
+.standings-row td:first-child{border-radius:8px 0 0 8px}
+.standings-row td:last-child{border-radius:0 8px 8px 0}
+.standings-row:hover td{background:var(--surface2)}
+.standings-row.expanded td{background:var(--surface2);border-radius:8px 8px 0 0!important}
+.rank-badge{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-weight:700;font-size:14px;color:#000}
+.rank-1{background:var(--rank1)}.rank-2{background:var(--rank2)}.rank-3{background:var(--rank3)}
+.rank-other{background:var(--surface3);color:var(--text2)}
+.owner-name{font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;letter-spacing:0.5px}
+.pts{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;text-align:right}
+.pts.actual{color:var(--green)}
+.pts.projected{color:var(--accent)}
+.pts-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;font-family:'Oswald',sans-serif}
+.progress-bar{height:4px;background:var(--surface3);border-radius:2px;margin-top:6px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width .5s ease}
+/* Player detail panel */
+.player-panel{display:none;background:var(--surface2);border-radius:0 0 8px 8px;margin-top:-4px;margin-bottom:4px;overflow:hidden}
+.player-panel.open{display:block}
+.player-row{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;padding:10px 16px;border-bottom:1px solid var(--surface3);gap:12px;font-size:14px}
+.player-row:last-child{border-bottom:none}
+.player-info{display:flex;align-items:center;gap:10px}
+.player-team-badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:0.5px}
+.player-name{font-weight:600}
+.player-ppg{color:var(--text3);font-size:12px}
+.player-status{font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap}
+.player-status.live{background:rgba(255,68,68,0.15);color:var(--live-pulse);animation:pulse-text 1.5s infinite}
+.player-status.won{background:rgba(46,204,113,0.15);color:var(--green)}
+.player-status.eliminated{background:rgba(231,76,60,0.15);color:var(--red)}
+.player-status.upcoming{background:rgba(52,152,219,0.15);color:var(--blue)}
+@keyframes pulse-text{0%,100%{opacity:1}50%{opacity:0.6}}
+.player-pts{font-family:'JetBrains Mono',monospace;font-weight:600;text-align:right;min-width:50px}
+.player-proj{font-family:'JetBrains Mono',monospace;color:var(--accent2);text-align:right;min-width:70px;font-size:13px}
+/* Games panel */
+.games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.game-card{background:var(--surface);border-radius:10px;padding:16px;border:1px solid var(--surface3)}
+.game-card.live{border-color:var(--live-pulse);box-shadow:0 0 20px rgba(255,68,68,0.1)}
+.game-card.final{opacity:0.8}
+.game-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:11px;color:var(--text3);font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:1px}
+.game-status-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:3px}
+.game-status-badge.live{background:var(--live-pulse);color:#fff}
+.game-status-badge.final{background:var(--surface3);color:var(--text2)}
+.game-status-badge.upcoming{background:var(--blue);color:#fff}
+.game-team{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
+.game-team-info{display:flex;align-items:center;gap:8px}
+.game-seed{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);min-width:20px}
+.game-team-name{font-weight:600;font-size:15px}
+.game-team-name.winner{color:var(--green)}
+.game-team-name.loser{color:var(--text3);text-decoration:line-through}
+.game-score{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
+.game-win-prob{font-size:11px;color:var(--text3);text-align:center;margin-top:8px;font-family:'JetBrains Mono',monospace}
+/* Admin panel */
+.admin-panel{background:var(--surface);border-radius:10px;padding:20px;margin-bottom:20px;border:1px solid var(--surface3)}
+.admin-title{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;color:var(--accent)}
+.admin-section{margin-bottom:16px}
+.admin-section h4{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-family:'Oswald',sans-serif}
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.admin-team-row{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:6px;font-size:13px}
+.admin-team-row select,.admin-team-row input{font-family:'Source Sans 3',sans-serif;font-size:12px;padding:4px 8px;border-radius:4px;border:1px solid var(--surface3);background:var(--surface);color:var(--text);outline:none}
+.admin-team-row input{width:60px;text-align:center}
+.admin-team-row select{min-width:100px}
+.admin-player-score{display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--surface2);border-radius:6px;font-size:12px}
+.admin-player-score input{width:45px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:12px;padding:3px 4px;border-radius:3px;border:1px solid var(--surface3);background:var(--surface);color:var(--text)}
+.admin-save{margin-top:12px}
+/* Responsive */
+@media(max-width:768px){
+  .header-inner{flex-direction:column;align-items:flex-start}
+  .title{font-size:22px}
+  .standings-table{font-size:13px}
+  .player-row{grid-template-columns:1fr auto auto;font-size:12px}
+  .player-proj{display:none}
+  .games-grid{grid-template-columns:1fr}
+  .container{padding:12px}
+}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty-state h2{font-family:'Oswald',sans-serif;font-size:24px;margin-bottom:8px;color:var(--text2)}
+.loading{text-align:center;padding:40px;color:var(--text3)}
+.ticker{background:var(--surface2);padding:8px 0;overflow:hidden;white-space:nowrap;font-size:12px;color:var(--text2);border-bottom:1px solid var(--surface3)}
+.ticker-inner{display:inline-block;animation:scroll 30s linear infinite}
+.ticker-item{display:inline;padding:0 24px}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.footer{text-align:center;padding:24px;font-size:11px;color:var(--text3);border-top:1px solid var(--surface3);margin-top:40px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="title">
+      2026 March Madness Pool
+      <span>Live Scoreboard & Projections</span>
+    </div>
+    <div class="status-bar">
+      <div><span class="status-dot off" id="apiDot"></span><span id="apiStatus">Pre-Tournament</span></div>
+      <span id="lastUpdate" style="font-family:'JetBrains Mono',monospace;font-size:11px"></span>
+      <button class="btn" id="refreshBtn" onclick="manualRefresh()">↻ Refresh</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <div class="tab active" data-tab="standings" onclick="switchTab('standings')">Standings</div>
+    <div class="tab" data-tab="games" onclick="switchTab('games')">Games</div>
+    <div class="tab" data-tab="admin" onclick="switchTab('admin')">⚙ Scores</div>
+  </div>
+  <div id="standings-panel"></div>
+  <div id="games-panel" style="display:none"></div>
+  <div id="admin-panel" style="display:none"></div>
+</div>
+
+<div class="footer">
+  Probabilities via Silver Bulletin • Player stats via ESPN • Built for the crew
+</div>
+
+<script>
+// ============================================================
+// DATA: Drafted Players (from Per Game Stats tab)
+// ============================================================
+const PLAYERS = [
+  // Aidan
+  {name:"Yaxel Lendeborg",team:"Michigan",ppg:14.4,owner:"Aidan"},
+  {name:"Alex Condon",team:"Florida",ppg:15.0,owner:"Aidan"},
+  {name:"Elliot Cadeau",team:"Michigan",ppg:10.2,owner:"Aidan"},
+  {name:"David Mirkovic",team:"Illinois",ppg:13.4,owner:"Aidan"},
+  {name:"Kylan Boswell",team:"Illinois",ppg:13.2,owner:"Aidan"},
+  {name:"Trey Kaufman-Renn",team:"Purdue",ppg:13.4,owner:"Aidan"},
+  // DiLillo
+  {name:"Thomas Haugh",team:"Florida",ppg:17.1,owner:"DiLillo"},
+  {name:"Aday Mara",team:"Michigan",ppg:11.6,owner:"DiLillo"},
+  {name:"Braden Smith",team:"Purdue",ppg:14.0,owner:"DiLillo"},
+  {name:"Malik Thomas",team:"Virginia",ppg:12.4,owner:"DiLillo"},
+  {name:"Alex Karaban",team:"Connecticut",ppg:12.6,owner:"DiLillo"},
+  {name:"John Blackwell",team:"Wisconsin",ppg:19.0,owner:"DiLillo"},
+  // Garrett
+  {name:"Graham Ike",team:"Gonzaga",ppg:19.7,owner:"Garrett"},
+  {name:"Labaron Philon",team:"Alabama",ppg:21.7,owner:"Garrett"},
+  {name:"Xaivian Lee",team:"Florida",ppg:11.5,owner:"Garrett"},
+  {name:"Darryn Peterson",team:"Kansas",ppg:19.8,owner:"Garrett"},
+  {name:"Joseph Tugler",team:"Houston",ppg:8.4,owner:"Garrett"},
+  {name:"Christian Anderson",team:"Texas Tech",ppg:18.9,owner:"Garrett"},
+  // Goldsmith
+  {name:"Kingston Flemings",team:"Houston",ppg:16.4,owner:"Goldsmith"},
+  {name:"Milan Momcilovic",team:"Iowa State",ppg:17.1,owner:"Goldsmith"},
+  {name:"Tarris Reed Jr.",team:"Connecticut",ppg:13.7,owner:"Goldsmith"},
+  {name:"Ja'Kobi Gillespie",team:"Tennessee",ppg:18.0,owner:"Goldsmith"},
+  {name:"Tyon Grant-Foster",team:"Gonzaga",ppg:11.2,owner:"Goldsmith"},
+  {name:"Nick Boyd",team:"Wisconsin",ppg:20.6,owner:"Goldsmith"},
+  // Goldstein
+  {name:"Jaden Bradley",team:"Arizona",ppg:13.3,owner:"Goldstein"},
+  {name:"Joshua Jefferson",team:"Iowa State",ppg:16.9,owner:"Goldstein"},
+  {name:"Coen Carr",team:"Michigan State",ppg:11.6,owner:"Goldstein"},
+  {name:"Cayden Boozer",team:"Duke",ppg:7.1,owner:"Goldstein"},
+  {name:"Milos Uzan",team:"Houston",ppg:11.1,owner:"Goldstein"},
+  {name:"Jaxon Kohler",team:"Michigan State",ppg:12.7,owner:"Goldstein"},
+  // Malichio
+  {name:"Koa Peat",team:"Arizona",ppg:13.6,owner:"Malichio"},
+  {name:"Patrick Ngongba",team:"Duke",ppg:10.7,owner:"Malichio"},
+  {name:"Jeremy Fears Jr.",team:"Michigan State",ppg:15.7,owner:"Malichio"},
+  {name:"Ivan Kharchenkov",team:"Arizona",ppg:10.1,owner:"Malichio"},
+  {name:"Tamin Lipsey",team:"Iowa State",ppg:13.3,owner:"Malichio"},
+  {name:"Anthony Dell'Orso",team:"Arizona",ppg:9.0,owner:"Malichio"},
+  // Noah
+  {name:"Isaiah Evans",team:"Duke",ppg:14.9,owner:"Noah"},
+  {name:"Morez Johnson Jr.",team:"Michigan",ppg:13.3,owner:"Noah"},
+  {name:"Motiejus Krivas",team:"Arizona",ppg:10.5,owner:"Noah"},
+  {name:"Fletcher Loyer",team:"Purdue",ppg:13.8,owner:"Noah"},
+  {name:"Duke Miles",team:"Vanderbilt",ppg:16.4,owner:"Noah"},
+  {name:"Rueben Chinyelu",team:"Florida",ppg:11.2,owner:"Noah"},
+  // Troy
+  {name:"Brayden Burries",team:"Arizona",ppg:15.9,owner:"Troy"},
+  {name:"Emanuel Sharp",team:"Houston",ppg:15.3,owner:"Troy"},
+  {name:"AJ Dybantsa",team:"BYU",ppg:25.3,owner:"Troy"},
+  {name:"Zuby Ejiofor",team:"St. John's",ppg:16.3,owner:"Troy"},
+  {name:"Meleek Thomas",team:"Arkansas",ppg:15.6,owner:"Troy"},
+  {name:"Robert Wright III",team:"BYU",ppg:18.2,owner:"Troy"},
+  // Waller
+  {name:"Cameron Boozer",team:"Duke",ppg:22.5,owner:"Waller"},
+  {name:"Tyler Tanner",team:"Vanderbilt",ppg:19.2,owner:"Waller"},
+  {name:"Boogie Fland",team:"Florida",ppg:11.6,owner:"Waller"},
+  {name:"Bruce Thornton",team:"Ohio State",ppg:20.2,owner:"Waller"},
+  {name:"Tavari Johnson",team:"Akron",ppg:20.1,owner:"Waller"},
+  {name:"Henri Veesaar",team:"North Carolina",ppg:16.7,owner:"Waller"},
+  // Yonatan
+  {name:"Darius Acuff Jr.",team:"Arkansas",ppg:22.7,owner:"Yonatan"},
+  {name:"Keaton Wagler",team:"Illinois",ppg:17.9,owner:"Yonatan"},
+  {name:"Solomon Ball",team:"Connecticut",ppg:13.5,owner:"Yonatan"},
+  {name:"Andrej Stojakovic",team:"Illinois",ppg:13.4,owner:"Yonatan"},
+  {name:"Pryce Sandfort",team:"Nebraska",ppg:17.8,owner:"Yonatan"},
+  {name:"Thijs De Ridder",team:"Virginia",ppg:15.5,owner:"Yonatan"},
+];
+
+const OWNERS = ["Aidan","DiLillo","Garrett","Goldsmith","Goldstein","Malichio","Noah","Troy","Waller","Yonatan"];
+
+// ============================================================
+// Silver Bulletin Probabilities (from uploaded screenshots)
+// Format: {r64, r32, s16, e8, f4, cp, win, seed, region}
+// r64=P(play R64), r32=P(reach R32), etc.
+// ============================================================
+const TEAMS = {
+  // EAST
+  "Duke":{r64:1,r32:.988,s16:.83,e8:.638,f4:.486,cp:.315,win:.185,seed:1,region:"East"},
+  "Siena":{r64:1,r32:.012,s16:.001,e8:0,f4:0,cp:0,win:0,seed:16,region:"East"},
+  "Ohio State":{r64:1,r32:.642,s16:.124,e8:.058,f4:.026,cp:.009,win:.003,seed:8,region:"East"},
+  "TCU":{r64:1,r32:.358,s16:.046,e8:.016,f4:.005,cp:.001,win:0,seed:9,region:"East"},
+  "St. John's":{r64:1,r32:.825,s16:.507,e8:.173,f4:.099,cp:.043,win:.016,seed:5,region:"East"},
+  "Northern Iowa":{r64:1,r32:.175,s16:.053,e8:.006,f4:.002,cp:0,win:0,seed:12,region:"East"},
+  "Kansas":{r64:1,r32:.863,s16:.417,e8:.108,f4:.051,cp:.019,win:.006,seed:4,region:"East"},
+  "Cal. Baptist":{r64:1,r32:.137,s16:.023,e8:.001,f4:0,cp:0,win:0,seed:13,region:"East"},
+  "Louisville":{r64:1,r32:.714,s16:.353,e8:.181,f4:.058,cp:.024,win:.009,seed:6,region:"East"},
+  "South Florida":{r64:1,r32:.286,s16:.088,e8:.029,f4:.006,cp:.002,win:0,seed:11,region:"East"},
+  "Michigan State":{r64:1,r32:.924,s16:.549,e8:.291,f4:.099,cp:.04,win:.014,seed:3,region:"East"},
+  "North Dakota State":{r64:1,r32:.076,s16:.011,e8:.002,f4:0,cp:0,win:0,seed:14,region:"East"},
+  "UCLA":{r64:1,r32:.692,s16:.262,e8:.109,f4:.028,cp:.008,win:.002,seed:7,region:"East"},
+  "UCF":{r64:1,r32:.308,s16:.073,e8:.019,f4:.003,cp:.001,win:0,seed:10,region:"East"},
+  "Connecticut":{r64:1,r32:.94,s16:.655,e8:.369,f4:.137,cp:.057,win:.021,seed:2,region:"East"},
+  "Furman":{r64:1,r32:.06,s16:.009,e8:.001,f4:0,cp:0,win:0,seed:15,region:"East"},
+  // MIDWEST
+  "Michigan":{r64:1,r32:.978,s16:.867,e8:.72,f4:.501,cp:.315,win:.191,seed:1,region:"Midwest"},
+  "UMBC":{r64:.508,r32:.012,s16:.002,e8:0,f4:0,cp:0,win:0,seed:16,region:"Midwest"},
+  "Howard":{r64:.492,r32:.01,s16:.002,e8:0,f4:0,cp:0,win:0,seed:16,region:"Midwest"},
+  "Georgia":{r64:1,r32:.574,s16:.08,e8:.035,f4:.011,cp:.003,win:.001,seed:8,region:"Midwest"},
+  "Saint Louis":{r64:1,r32:.426,s16:.05,e8:.02,f4:.005,cp:.001,win:0,seed:9,region:"Midwest"},
+  "Texas Tech":{r64:1,r32:.707,s16:.267,e8:.048,f4:.014,cp:.004,win:.001,seed:5,region:"Midwest"},
+  "Akron":{r64:1,r32:.293,s16:.064,e8:.006,f4:.001,cp:0,win:0,seed:12,region:"Midwest"},
+  "Alabama":{r64:1,r32:.879,s16:.63,e8:.166,f4:.068,cp:.024,win:.008,seed:4,region:"Midwest"},
+  "Hofstra":{r64:1,r32:.121,s16:.038,e8:.003,f4:.001,cp:0,win:0,seed:13,region:"Midwest"},
+  "Tennessee":{r64:1,r32:.777,s16:.373,e8:.139,f4:.044,cp:.017,win:.006,seed:6,region:"Midwest"},
+  "Miami (OH)":{r64:.293,r32:.036,s16:.006,e8:.001,f4:0,cp:0,win:0,seed:11,region:"Midwest"},
+  "SMU":{r64:.707,r32:.188,s16:.054,e8:.012,f4:.002,cp:.001,win:0,seed:11,region:"Midwest"},
+  "Virginia":{r64:1,r32:.944,s16:.561,e8:.221,f4:.074,cp:.028,win:.01,seed:3,region:"Midwest"},
+  "Wright State":{r64:1,r32:.056,s16:.006,e8:.001,f4:0,cp:0,win:0,seed:14,region:"Midwest"},
+  "Kentucky":{r64:1,r32:.639,s16:.18,e8:.086,f4:.024,cp:.008,win:.003,seed:7,region:"Midwest"},
+  "Santa Clara":{r64:1,r32:.361,s16:.069,e8:.024,f4:.005,cp:.001,win:0,seed:10,region:"Midwest"},
+  "Iowa State":{r64:1,r32:.975,s16:.748,e8:.517,f4:.25,cp:.13,win:.066,seed:2,region:"Midwest"},
+  "Tennessee State":{r64:1,r32:.025,s16:.002,e8:0,f4:0,cp:0,win:0,seed:15,region:"Midwest"},
+  // WEST
+  "Arizona":{r64:1,r32:.99,s16:.89,e8:.719,f4:.529,cp:.292,win:.165,seed:1,region:"West"},
+  "LIU":{r64:1,r32:.01,s16:.001,e8:0,f4:0,cp:0,win:0,seed:16,region:"West"},
+  "Villanova":{r64:1,r32:.409,s16:.037,e8:.013,f4:.004,cp:.001,win:0,seed:8,region:"West"},
+  "Utah State":{r64:1,r32:.591,s16:.072,e8:.029,f4:.011,cp:.002,win:.001,seed:9,region:"West"},
+  "Wisconsin":{r64:1,r32:.826,s16:.404,e8:.096,f4:.042,cp:.014,win:.004,seed:5,region:"West"},
+  "High Point":{r64:1,r32:.174,s16:.034,e8:.003,f4:.001,cp:0,win:0,seed:12,region:"West"},
+  "Arkansas":{r64:1,r32:.927,s16:.551,e8:.141,f4:.066,cp:.022,win:.008,seed:4,region:"West"},
+  "Hawaii":{r64:1,r32:.073,s16:.011,e8:.001,f4:0,cp:0,win:0,seed:13,region:"West"},
+  "BYU":{r64:1,r32:.543,s16:.172,e8:.058,f4:.012,cp:.003,win:.001,seed:6,region:"West"},
+  "Texas":{r64:.458,r32:.208,s16:.06,e8:.019,f4:.004,cp:.001,win:0,seed:11,region:"West"},
+  "NC State":{r64:.542,r32:.249,s16:.073,e8:.022,f4:.004,cp:.001,win:0,seed:11,region:"West"},
+  "Gonzaga":{r64:1,r32:.967,s16:.693,e8:.351,f4:.127,cp:.046,win:.017,seed:3,region:"West"},
+  "Kennesaw State":{r64:1,r32:.033,s16:.003,e8:0,f4:0,cp:0,win:0,seed:14,region:"West"},
+  "Miami (Fla.)":{r64:1,r32:.564,s16:.139,e8:.053,f4:.011,cp:.003,win:.001,seed:7,region:"West"},
+  "Missouri":{r64:1,r32:.436,s16:.091,e8:.028,f4:.005,cp:.001,win:0,seed:10,region:"West"},
+  "Purdue":{r64:1,r32:.978,s16:.768,e8:.47,f4:.185,cp:.084,win:.04,seed:2,region:"West"},
+  "Queens":{r64:1,r32:.022,s16:.003,e8:0,f4:0,cp:0,win:0,seed:15,region:"West"},
+  // SOUTH
+  "Florida":{r64:1,r32:.992,s16:.846,e8:.608,f4:.346,cp:.188,win:.095,seed:1,region:"South"},
+  "Prairie View":{r64:.43,r32:.003,s16:0,e8:0,f4:0,cp:0,win:0,seed:16,region:"South"},
+  "Lehigh":{r64:.57,r32:.005,s16:0,e8:0,f4:0,cp:0,win:0,seed:16,region:"South"},
+  "Clemson":{r64:1,r32:.403,s16:.052,e8:.017,f4:.004,cp:.001,win:0,seed:8,region:"South"},
+  "Iowa":{r64:1,r32:.598,s16:.102,e8:.042,f4:.012,cp:.004,win:.001,seed:9,region:"South"},
+  "Vanderbilt":{r64:1,r32:.84,s16:.503,e8:.189,f4:.078,cp:.032,win:.012,seed:5,region:"South"},
+  "McNeese":{r64:1,r32:.16,s16:.045,e8:.006,f4:.001,cp:0,win:0,seed:12,region:"South"},
+  "Nebraska":{r64:1,r32:.922,s16:.444,e8:.138,f4:.048,cp:.017,win:.005,seed:4,region:"South"},
+  "Troy":{r64:1,r32:.078,s16:.008,e8:.001,f4:0,cp:0,win:0,seed:13,region:"South"},
+  "North Carolina":{r64:1,r32:.502,s16:.105,e8:.022,f4:.005,cp:.001,win:0,seed:6,region:"South"},
+  "VCU":{r64:1,r32:.498,s16:.103,e8:.021,f4:.004,cp:.001,win:0,seed:11,region:"South"},
+  "Illinois":{r64:1,r32:.971,s16:.788,e8:.379,f4:.188,cp:.092,win:.042,seed:3,region:"South"},
+  "Penn":{r64:1,r32:.029,s16:.004,e8:0,f4:0,cp:0,win:0,seed:14,region:"South"},
+  "Saint Mary's":{r64:1,r32:.582,s16:.156,e8:.058,f4:.018,cp:.005,win:.001,seed:7,region:"South"},
+  "Texas A&M":{r64:1,r32:.418,s16:.088,e8:.028,f4:.008,cp:.002,win:0,seed:10,region:"South"},
+  "Houston":{r64:1,r32:.968,s16:.752,e8:.492,f4:.288,cp:.138,win:.063,seed:2,region:"South"},
+  "Idaho":{r64:1,r32:.032,s16:.004,e8:0,f4:0,cp:0,win:0,seed:15,region:"South"},
+};
+
+// ESPN team name mapping: ESPN displayName -> our team key
+const ESPN_NAME_MAP = {
+  "Duke Blue Devils":"Duke","Duke":"Duke",
+  "Michigan Wolverines":"Michigan","Michigan":"Michigan",
+  "Arizona Wildcats":"Arizona","Arizona":"Arizona",
+  "Florida Gators":"Florida","Florida":"Florida",
+  "Arkansas Razorbacks":"Arkansas","Arkansas":"Arkansas",
+  "Houston Cougars":"Houston","Houston":"Houston",
+  "Illinois Fighting Illini":"Illinois","Illinois":"Illinois",
+  "Gonzaga Bulldogs":"Gonzaga","Gonzaga":"Gonzaga",
+  "Iowa State Cyclones":"Iowa State","Iowa State":"Iowa State",
+  "Alabama Crimson Tide":"Alabama","Alabama":"Alabama",
+  "Purdue Boilermakers":"Purdue","Purdue":"Purdue",
+  "Vanderbilt Commodores":"Vanderbilt","Vanderbilt":"Vanderbilt",
+  "Michigan State Spartans":"Michigan State","Michigan State":"Michigan State",
+  "Kansas Jayhawks":"Kansas","Kansas":"Kansas",
+  "UConn Huskies":"Connecticut","UConn":"Connecticut","Connecticut":"Connecticut",
+  "St. John's Red Storm":"St. John's","St. John's":"St. John's","St. John's (NY)":"St. John's",
+  "Nebraska Cornhuskers":"Nebraska","Nebraska":"Nebraska",
+  "Virginia Cavaliers":"Virginia","Virginia":"Virginia",
+  "Wisconsin Badgers":"Wisconsin","Wisconsin":"Wisconsin",
+  "Tennessee Volunteers":"Tennessee","Tennessee":"Tennessee",
+  "Texas Tech Red Raiders":"Texas Tech","Texas Tech":"Texas Tech",
+  "BYU Cougars":"BYU","BYU":"BYU",
+  "Louisville Cardinals":"Louisville","Louisville":"Louisville",
+  "Ohio State Buckeyes":"Ohio State","Ohio State":"Ohio State",
+  "UCLA Bruins":"UCLA","UCLA":"UCLA",
+  "North Carolina Tar Heels":"North Carolina","North Carolina":"North Carolina",
+  "Akron Zips":"Akron","Akron":"Akron",
+  "Kentucky Wildcats":"Kentucky","Kentucky":"Kentucky",
+  "TCU Horned Frogs":"TCU","TCU":"TCU",
+  "Ohio St. Buckeyes":"Ohio State",
+  "Miami Hurricanes":"Miami (Fla.)","Miami":"Miami (Fla.)",
+  "Saint Mary's Gaels":"Saint Mary's","Saint Mary's":"Saint Mary's",
+};
+
+// ============================================================
+// STATE (persisted in localStorage)
+// ============================================================
+const STATE_KEY = "mm_pool_2026_state";
+let state = loadState();
+
+function defaultState() {
+  const teamState = {};
+  for (const t of Object.keys(TEAMS)) {
+    teamState[t] = {status:"active", gamesPlayed:0, currentGame:null};
+  }
+  const playerScores = {};
+  for (const p of PLAYERS) {
+    playerScores[p.name] = {completedGamePts:[], currentGamePts:0};
+  }
+  return {teams:teamState, players:playerScores, lastESPNUpdate:null, round:"R64"};
+}
+
+function loadState() {
+  try {
+    const s = localStorage.getItem(STATE_KEY);
+    if (s) {
+      const parsed = JSON.parse(s);
+      // Ensure all players/teams exist
+      for (const p of PLAYERS) {
+        if (!parsed.players[p.name]) parsed.players[p.name] = {completedGamePts:[],currentGamePts:0};
+      }
+      for (const t of Object.keys(TEAMS)) {
+        if (!parsed.teams[t]) parsed.teams[t] = {status:"active",gamesPlayed:0,currentGame:null};
+      }
+      return parsed;
+    }
+  } catch(e) {}
+  return defaultState();
+}
+
+function saveState() { localStorage.setItem(STATE_KEY, JSON.stringify(state)); }
+
+// ============================================================
+// PROJECTION ENGINE
+// ============================================================
+function calcExpectedGames(teamName) {
+  // Pre-tournament expected games from Silver Bulletin
+  const t = TEAMS[teamName];
+  if (!t) return 1;
+  return t.r64 + t.r32 + t.s16 + t.e8 + t.f4 + t.cp;
+}
+
+function getReachProbs(teamName) {
+  const t = TEAMS[teamName];
+  if (!t) return [1,0,0,0,0,0,0];
+  return [t.r64, t.r32, t.s16, t.e8, t.f4, t.cp, t.win];
+}
+
+function calcLiveWinProb(margin, minutesRemaining) {
+  // Normal CDF approximation for win probability
+  // Based on: P(win) = Φ(margin / (σ × √(t/40)))
+  // σ ≈ 11 (std dev of final margin in NCAA)
+  if (minutesRemaining <= 0) return margin > 0 ? 1 : (margin < 0 ? 0 : 0.5);
+  const z = margin / (11 * Math.sqrt(minutesRemaining / 40));
+  return normalCDF(z);
+}
+
+function normalCDF(z) {
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
+  const sign = z < 0 ? -1 : 1;
+  z = Math.abs(z) / Math.sqrt(2);
+  const t = 1.0 / (1.0 + p * z);
+  const y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t * Math.exp(-z*z);
+  return 0.5 * (1.0 + sign * y);
+}
+
+function projectPlayer(player) {
+  const ts = state.teams[player.team];
+  const ps = state.players[player.name];
+  if (!ts || !ps) return {actual:0, projected:player.ppg * calcExpectedGames(player.team), status:"upcoming"};
+
+  const actualPts = (ps.completedGamePts || []).reduce((a,b)=>a+b, 0) + (ps.currentGamePts || 0);
+
+  if (ts.status === "eliminated") {
+    return {actual:actualPts, projected:actualPts, status:"eliminated"};
+  }
+
+  const reachProbs = getReachProbs(player.team);
+  const gamesPlayed = ts.gamesPlayed || 0;
+
+  if (ts.currentGame) {
+    // LIVE game
+    const cg = ts.currentGame;
+    const minRemaining = cg.minutesRemaining || 0;
+    const timeRemainingFrac = Math.max(0, minRemaining) / 40;
+
+    // Remaining points in THIS game (player scores regardless of outcome)
+    const currentGameRemaining = player.ppg * timeRemainingFrac;
+
+    // Live win probability
+    const margin = (cg.teamScore || 0) - (cg.oppScore || 0);
+    const liveWinP = cg.winProb != null ? cg.winProb : calcLiveWinProb(margin, minRemaining);
+
+    // Expected future games AFTER current game
+    let futureGames = 0;
+    let runningProb = liveWinP;
+    const currentRoundIdx = gamesPlayed; // 0=R64, 1=R32, etc.
+
+    for (let i = currentRoundIdx + 1; i < 6; i++) {
+      futureGames += runningProb;
+      if (reachProbs[i] > 0.0001) {
+        const condWin = reachProbs[i + 1] / reachProbs[i];
+        runningProb *= condWin;
+      } else {
+        runningProb *= 0.5; // fallback for extreme underdogs
+      }
+    }
+
+    return {
+      actual: actualPts,
+      projected: actualPts + currentGameRemaining + player.ppg * futureGames,
+      status: "live",
+      liveWinP,
+      minRemaining
+    };
+  }
+
+  // Team is alive but not currently playing
+  let expRemainingGames = 0;
+  let runningProb = 1.0;
+
+  for (let i = gamesPlayed; i < 6; i++) {
+    expRemainingGames += runningProb;
+    if (reachProbs[i] > 0.0001) {
+      const condWin = reachProbs[i + 1] / reachProbs[i];
+      runningProb *= condWin;
+    } else {
+      runningProb *= 0.5;
+    }
+  }
+
+  return {
+    actual: actualPts,
+    projected: actualPts + player.ppg * expRemainingGames,
+    status: gamesPlayed > 0 ? "active" : "upcoming"
+  };
+}
+
+function calcStandings() {
+  const standings = OWNERS.map(owner => {
+    const players = PLAYERS.filter(p => p.owner === owner);
+    let totalActual = 0, totalProjected = 0;
+    const playerDetails = players.map(p => {
+      const proj = projectPlayer(p);
+      totalActual += proj.actual;
+      totalProjected += proj.projected;
+      return {...p, ...proj};
+    });
+    playerDetails.sort((a,b) => b.projected - a.projected);
+    return {owner, totalActual, totalProjected, players:playerDetails};
+  });
+  standings.sort((a,b) => b.totalProjected - a.totalProjected);
+  return standings;
+}
+
+// ============================================================
+// ESPN API
+// ============================================================
+const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball";
+const CORS_PROXIES = [
+  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+];
+let currentProxy = 0;
+
+async function fetchWithProxy(url) {
+  // Try direct first
+  try {
+    const r = await fetch(url, {signal:AbortSignal.timeout(5000)});
+    if (r.ok) return await r.json();
+  } catch(e) {}
+  // Try proxies
+  for (let i = 0; i < CORS_PROXIES.length; i++) {
+    try {
+      const proxyUrl = CORS_PROXIES[(currentProxy + i) % CORS_PROXIES.length](url);
+      const r = await fetch(proxyUrl, {signal:AbortSignal.timeout(8000)});
+      if (r.ok) {
+        currentProxy = (currentProxy + i) % CORS_PROXIES.length;
+        return await r.json();
+      }
+    } catch(e) {}
+  }
+  return null;
+}
+
+function resolveTeamName(espnName, abbrev) {
+  if (ESPN_NAME_MAP[espnName]) return ESPN_NAME_MAP[espnName];
+  if (ESPN_NAME_MAP[abbrev]) return ESPN_NAME_MAP[abbrev];
+  // Fuzzy match
+  for (const key of Object.keys(TEAMS)) {
+    if (espnName.toLowerCase().includes(key.toLowerCase())) return key;
+  }
+  return null;
+}
+
+function getMinutesRemaining(status) {
+  if (!status) return 40;
+  const type = status.type?.name || status.type?.state || "";
+  if (type === "STATUS_FINAL" || type === "STATUS_END_PERIOD" && status.type?.completed) return 0;
+  if (type === "STATUS_SCHEDULED" || type === "STATUS_POSTPONED") return 40;
+  const period = status.period || 1;
+  const clock = status.displayClock || "20:00";
+  const parts = clock.split(":");
+  const mins = parseInt(parts[0]) || 0;
+  const secs = parseInt(parts[1]) || 0;
+  const clockMins = mins + secs/60;
+  if (period === 1) return clockMins + 20;
+  if (period === 2) return clockMins;
+  // Overtime
+  return clockMins;
+}
+
+async function fetchLiveScores() {
+  const today = new Date();
+  const dateStr = today.getFullYear() +
+    String(today.getMonth()+1).padStart(2,'0') +
+    String(today.getDate()).padStart(2,'0');
+
+  const url = `${ESPN_BASE}/scoreboard?dates=${dateStr}&groups=100&limit=100`;
+  const data = await fetchWithProxy(url);
+  if (!data || !data.events) return null;
+
+  const games = [];
+  for (const event of data.events) {
+    const comp = event.competitions?.[0];
+    if (!comp) continue;
+    const teams = comp.competitors || [];
+    if (teams.length < 2) continue;
+
+    const home = teams.find(t => t.homeAway === "home") || teams[0];
+    const away = teams.find(t => t.homeAway === "away") || teams[1];
+
+    const homeName = resolveTeamName(
+      home.team?.displayName || home.team?.name || "",
+      home.team?.abbreviation || ""
+    );
+    const awayName = resolveTeamName(
+      away.team?.displayName || away.team?.name || "",
+      away.team?.abbreviation || ""
+    );
+
+    const status = comp.status || {};
+    const statusType = status.type?.name || "";
+    const minRemaining = getMinutesRemaining(status);
+
+    // Win probability from ESPN (if available)
+    let homeWinProb = null;
+    if (comp.situation?.lastPlay?.probability?.homeWinPercentage != null) {
+      homeWinProb = comp.situation.lastPlay.probability.homeWinPercentage;
+    }
+
+    games.push({
+      id: event.id,
+      homeName, awayName,
+      homeScore: parseInt(home.score) || 0,
+      awayScore: parseInt(away.score) || 0,
+      homeSeed: home.curatedRank?.current || TEAMS[homeName]?.seed,
+      awaySeed: away.curatedRank?.current || TEAMS[awayName]?.seed,
+      statusType,
+      statusText: status.type?.shortDetail || status.type?.detail || "",
+      minRemaining,
+      homeWinProb,
+      period: status.period,
+      clock: status.displayClock,
+      homeDisplayName: home.team?.displayName || homeName,
+      awayDisplayName: away.team?.displayName || awayName,
+    });
+  }
+  return games;
+}
+
+async function fetchBoxScore(gameId) {
+  const url = `${ESPN_BASE}/summary?event=${gameId}`;
+  const data = await fetchWithProxy(url);
+  if (!data) return null;
+
+  const playerStats = {};
+  for (const team of (data.boxscore?.players || [])) {
+    const teamName = resolveTeamName(
+      team.team?.displayName || team.team?.name || "",
+      team.team?.abbreviation || ""
+    );
+    for (const group of (team.statistics || [])) {
+      const ptsIdx = (group.labels || []).indexOf("PTS");
+      if (ptsIdx < 0) continue;
+      for (const athlete of (group.athletes || [])) {
+        const name = athlete.athlete?.displayName || "";
+        const pts = parseInt(athlete.stats?.[ptsIdx]) || 0;
+        playerStats[name] = {pts, team:teamName};
+      }
+    }
+  }
+  return playerStats;
+}
+
+// Match ESPN player names to our player names
+function matchPlayerName(espnName, ourPlayers) {
+  // Direct match
+  const direct = ourPlayers.find(p => p.name === espnName);
+  if (direct) return direct;
+  // Last name match within same team context
+  const espnLast = espnName.split(" ").pop().toLowerCase();
+  const matches = ourPlayers.filter(p => {
+    const ourLast = p.name.split(" ").pop().toLowerCase();
+    return ourLast === espnLast;
+  });
+  if (matches.length === 1) return matches[0];
+  // Fuzzy: check if ESPN name contains our last name
+  for (const p of ourPlayers) {
+    const parts = p.name.toLowerCase().split(" ");
+    if (parts.some(part => espnName.toLowerCase().includes(part) && part.length > 3)) return p;
+  }
+  return null;
+}
+
+async function updateFromESPN() {
+  const games = await fetchLiveScores();
+  if (!games) {
+    updateAPIStatus("offline");
+    return;
+  }
+
+  let hasLive = false;
+  const relevantGameIds = [];
+
+  for (const game of games) {
+    const isLive = game.statusType === "STATUS_IN_PROGRESS";
+    const isFinal = game.statusType === "STATUS_FINAL";
+    if (isLive) hasLive = true;
+
+    // Check if any of our teams are in this game
+    for (const teamName of [game.homeName, game.awayName]) {
+      if (!teamName || !state.teams[teamName]) continue;
+
+      const oppName = teamName === game.homeName ? game.awayName : game.homeName;
+      const teamScore = teamName === game.homeName ? game.homeScore : game.awayScore;
+      const oppScore = teamName === game.homeName ? game.awayScore : game.homeScore;
+      const isHome = teamName === game.homeName;
+
+      if (isLive) {
+        let winProb;
+        if (game.homeWinProb != null) {
+          winProb = isHome ? game.homeWinProb : 1 - game.homeWinProb;
+        } else {
+          winProb = calcLiveWinProb(teamScore - oppScore, game.minRemaining);
+        }
+
+        state.teams[teamName].currentGame = {
+          opponent: oppName,
+          teamScore, oppScore,
+          minutesRemaining: game.minRemaining,
+          winProb,
+          period: game.period,
+          clock: game.clock
+        };
+
+        relevantGameIds.push(game.id);
+      } else if (isFinal) {
+        state.teams[teamName].currentGame = null;
+        if (teamScore > oppScore) {
+          // Team won - advance
+          // Only update if this is a new result
+          const expectedGames = state.teams[teamName].gamesPlayed;
+          // Don't re-count if already recorded
+        } else {
+          state.teams[teamName].status = "eliminated";
+        }
+      }
+    }
+  }
+
+  // Fetch box scores for live/final games with our players
+  const uniqueIds = [...new Set(relevantGameIds)];
+  for (const gid of uniqueIds.slice(0, 5)) { // limit to 5 concurrent
+    const boxScore = await fetchBoxScore(gid);
+    if (!boxScore) continue;
+    for (const [espnName, data] of Object.entries(boxScore)) {
+      const teamPlayers = PLAYERS.filter(p => p.team === data.team);
+      const matched = matchPlayerName(espnName, teamPlayers);
+      if (matched && state.players[matched.name]) {
+        state.players[matched.name].currentGamePts = data.pts;
+      }
+    }
+  }
+
+  state.lastESPNUpdate = new Date().toISOString();
+  saveState();
+  updateAPIStatus(hasLive ? "live" : games.length > 0 ? "idle" : "off");
+  render();
+}
+
+function updateAPIStatus(status) {
+  const dot = document.getElementById("apiDot");
+  const txt = document.getElementById("apiStatus");
+  dot.className = "status-dot " + status;
+  if (status === "live") txt.textContent = "LIVE";
+  else if (status === "idle") txt.textContent = "Connected";
+  else if (status === "offline") txt.textContent = "Manual Mode";
+  else txt.textContent = "Pre-Tournament";
+
+  const upd = document.getElementById("lastUpdate");
+  upd.textContent = new Date().toLocaleTimeString();
+}
+
+// ============================================================
+// TEAM COLOR MAP
+// ============================================================
+const TEAM_COLORS = {
+  "Duke":"#003087","Michigan":"#00274C","Arizona":"#CC0033","Florida":"#0021A5",
+  "Arkansas":"#9D2235","Houston":"#C8102E","Illinois":"#E84A27","Gonzaga":"#002967",
+  "Iowa State":"#C8102E","Alabama":"#9E1B32","Purdue":"#CEB888","Vanderbilt":"#866D4B",
+  "Michigan State":"#18453B","Kansas":"#0051BA","Connecticut":"#000E2F","St. John's":"#D41B2C",
+  "Nebraska":"#E41C38","Virginia":"#232D4B","Wisconsin":"#C5050C","Tennessee":"#FF8200",
+  "Texas Tech":"#CC0000","BYU":"#002E5D","Louisville":"#AD0000","Ohio State":"#BB0000",
+  "UCLA":"#2D68C4","North Carolina":"#7BAFD4","Akron":"#041E42",
+};
+
+// ============================================================
+// UI RENDERING
+// ============================================================
+let expandedOwner = null;
+let currentTab = "standings";
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('standings-panel').style.display = tab === 'standings' ? '' : 'none';
+  document.getElementById('games-panel').style.display = tab === 'games' ? '' : 'none';
+  document.getElementById('admin-panel').style.display = tab === 'admin' ? '' : 'none';
+  if (tab === 'admin') renderAdmin();
+  if (tab === 'games') renderGames();
+}
+
+function render() {
+  renderStandings();
+  if (currentTab === 'games') renderGames();
+}
+
+function renderStandings() {
+  const standings = calcStandings();
+  const maxProj = Math.max(...standings.map(s => s.totalProjected));
+
+  let html = `<table class="standings-table">
+    <thead><tr>
+      <th style="width:50px"></th><th>Name</th>
+      <th class="r">Actual</th><th class="r">Projected</th><th class="r" style="width:120px"></th>
+    </tr></thead><tbody>`;
+
+  standings.forEach((s, i) => {
+    const rank = i + 1;
+    const rankClass = rank <= 3 ? `rank-${rank}` : "rank-other";
+    const expanded = expandedOwner === s.owner;
+    const hasLive = s.players.some(p => p.status === "live");
+    const barPct = maxProj > 0 ? (s.totalProjected / maxProj * 100) : 0;
+    const barColor = rank === 1 ? "var(--gold)" : rank === 2 ? "var(--silver)" : rank === 3 ? "var(--bronze)" : "var(--accent)";
+
+    html += `<tr class="standings-row ${expanded?'expanded':''}" onclick="toggleOwner('${s.owner}')">
+      <td><div class="rank-badge ${rankClass}">${rank}</div></td>
+      <td><div class="owner-name">${s.owner}${hasLive?' <span style="color:var(--live-pulse);font-size:10px">● LIVE</span>':''}</div></td>
+      <td class="pts actual"><span class="pts-label">Actual</span>${s.totalActual.toFixed(1)}</td>
+      <td class="pts projected"><span class="pts-label">Projected</span>${s.totalProjected.toFixed(1)}</td>
+      <td><div class="progress-bar"><div class="progress-fill" style="width:${barPct}%;background:${barColor}"></div></div></td>
+    </tr>`;
+
+    // Player detail panel
+    html += `<tr><td colspan="5" style="padding:0;border:none"><div class="player-panel ${expanded?'open':''}">`;
+    for (const p of s.players) {
+      const teamColor = TEAM_COLORS[p.team] || "#555";
+      const statusClass = p.status;
+      let statusText = "";
+      if (p.status === "live") statusText = `🔴 LIVE ${p.minRemaining?.toFixed(0) || ""}m`;
+      else if (p.status === "eliminated") statusText = "OUT";
+      else if (p.status === "active") statusText = "✓ ALIVE";
+      else statusText = "UPCOMING";
+
+      html += `<div class="player-row">
+        <div class="player-info">
+          <span class="player-team-badge" style="background:${teamColor};color:#fff">${TEAMS[p.team]?.seed || ""} ${p.team}</span>
+          <span class="player-name">${p.name}</span>
+          <span class="player-ppg">${p.ppg} ppg</span>
+        </div>
+        <span class="player-status ${statusClass}">${statusText}</span>
+        <span class="player-pts">${p.actual > 0 ? p.actual.toFixed(0) : "—"}</span>
+        <span class="player-proj">${p.projected.toFixed(1)}</span>
+      </div>`;
+    }
+    html += `</div></td></tr>`;
+  });
+
+  html += `</tbody></table>`;
+  document.getElementById('standings-panel').innerHTML = html;
+}
+
+function renderGames() {
+  // Show games by region with team statuses
+  const regions = ["East","West","South","Midwest"];
+  let html = "";
+
+  for (const region of regions) {
+    const regionTeams = Object.entries(TEAMS)
+      .filter(([_,t]) => t.region === region)
+      .sort((a,b) => a[1].seed - b[1].seed);
+
+    html += `<h3 style="font-family:'Oswald',sans-serif;font-size:16px;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin:20px 0 12px">${region} Region</h3>`;
+    html += `<div class="games-grid">`;
+
+    for (const [name, team] of regionTeams) {
+      const ts = state.teams[name];
+      const hasDrafted = PLAYERS.some(p => p.team === name);
+      const status = ts?.status || "active";
+      const gp = ts?.gamesPlayed || 0;
+      const expGames = calcExpectedGames(name);
+      const color = TEAM_COLORS[name] || "#555";
+
+      let statusBadge = "";
+      if (ts?.currentGame) statusBadge = `<span class="game-status-badge live">LIVE</span>`;
+      else if (status === "eliminated") statusBadge = `<span class="game-status-badge final">ELIMINATED</span>`;
+      else statusBadge = `<span class="game-status-badge upcoming">${gp}W</span>`;
+
+      const opacity = status === "eliminated" ? "0.5" : "1";
+      const border = hasDrafted ? `border-left:3px solid ${color}` : "";
+
+      html += `<div class="game-card" style="opacity:${opacity};${border}">
+        <div class="game-header">
+          <span style="color:${color};font-weight:700">(${team.seed}) ${name}</span>
+          ${statusBadge}
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3)">
+          <span>Exp Games: ${expGames.toFixed(2)}</span>
+          <span>Games Played: ${gp}</span>
+        </div>
+        ${ts?.currentGame ? `<div style="margin-top:8px;padding:8px;background:var(--surface2);border-radius:6px;font-size:12px">
+          <div>vs ${ts.currentGame.opponent}: <strong>${ts.currentGame.teamScore}-${ts.currentGame.oppScore}</strong></div>
+          <div style="color:var(--text3)">${ts.currentGame.minutesRemaining?.toFixed(1)}m remaining • Win: ${((ts.currentGame.winProb||0)*100).toFixed(0)}%</div>
+        </div>` : ""}
+        ${hasDrafted ? `<div style="margin-top:8px;font-size:11px;color:var(--text3)">
+          ${PLAYERS.filter(p=>p.team===name).map(p=>`<span style="margin-right:8px">${p.name.split(' ').pop()} (${p.owner})</span>`).join("")}
+        </div>` : ""}
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  document.getElementById('games-panel').innerHTML = html;
+}
+
+function renderAdmin() {
+  const relevantTeams = [...new Set(PLAYERS.map(p => p.team))].sort();
+
+  let html = `<div class="admin-panel">
+    <div class="admin-title">Team Status</div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:12px">Set each team's status and games won. For live games, enter score and time remaining.</p>
+    <div class="admin-grid">`;
+
+  for (const team of relevantTeams) {
+    const ts = state.teams[team];
+    const t = TEAMS[team];
+    html += `<div class="admin-team-row">
+      <span style="font-weight:600;min-width:110px;font-size:12px">(${t.seed}) ${team}</span>
+      <select onchange="updateTeamStatus('${team}',this.value)" style="font-size:11px">
+        <option value="active" ${ts.status==='active'?'selected':''}>Active</option>
+        <option value="playing" ${ts.currentGame?'selected':''}>Playing</option>
+        <option value="eliminated" ${ts.status==='eliminated'?'selected':''}>Eliminated</option>
+      </select>
+      <label style="font-size:11px;color:var(--text3)">W:</label>
+      <input type="number" min="0" max="6" value="${ts.gamesPlayed||0}" onchange="updateTeamGames('${team}',this.value)" style="width:40px">
+    </div>`;
+  }
+
+  html += `</div></div>`;
+
+  // Live game entry
+  html += `<div class="admin-panel">
+    <div class="admin-title">Live Game Entry</div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:12px">For teams currently playing, enter game details.</p>
+    <div class="admin-grid">`;
+
+  for (const team of relevantTeams) {
+    const ts = state.teams[team];
+    if (!ts.currentGame && ts.status !== "eliminated") {
+      // Show entry fields
+    }
+    html += `<div class="admin-team-row" style="flex-wrap:wrap">
+      <span style="font-weight:600;min-width:100px;font-size:12px">${team}</span>
+      <label style="font-size:10px;color:var(--text3)">Score:</label>
+      <input type="number" id="live-score-${team.replace(/[^a-zA-Z]/g,'')}" min="0" value="${ts.currentGame?.teamScore||0}" onchange="updateLiveGame('${team}')" style="width:45px">
+      <label style="font-size:10px;color:var(--text3)">Opp:</label>
+      <input type="number" id="live-opp-${team.replace(/[^a-zA-Z]/g,'')}" min="0" value="${ts.currentGame?.oppScore||0}" onchange="updateLiveGame('${team}')" style="width:45px">
+      <label style="font-size:10px;color:var(--text3)">Min left:</label>
+      <input type="number" id="live-min-${team.replace(/[^a-zA-Z]/g,'')}" min="0" max="45" step="0.5" value="${ts.currentGame?.minutesRemaining||0}" onchange="updateLiveGame('${team}')" style="width:45px">
+    </div>`;
+  }
+
+  html += `</div></div>`;
+
+  // Player scores
+  html += `<div class="admin-panel">
+    <div class="admin-title">Player Scores</div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:12px">Enter points scored per game. Separate multiple games with commas (e.g., "22,18,15"). For live game, use the "Live" field.</p>
+    <div class="admin-grid">`;
+
+  for (const p of PLAYERS.sort((a,b) => a.team.localeCompare(b.team) || b.ppg - a.ppg)) {
+    const ps = state.players[p.name];
+    const completedStr = (ps.completedGamePts||[]).join(",");
+    const safeId = p.name.replace(/[^a-zA-Z]/g,'');
+    html += `<div class="admin-player-score">
+      <span style="min-width:120px;font-size:11px"><strong>${p.name}</strong> <span style="color:var(--text3)">${p.team}</span></span>
+      <label style="font-size:10px;color:var(--text3)">Comp:</label>
+      <input type="text" id="pscore-${safeId}" value="${completedStr}" placeholder="22,18" onchange="updatePlayerScores('${p.name}','${safeId}')" style="width:70px;font-size:11px">
+      <label style="font-size:10px;color:var(--text3)">Live:</label>
+      <input type="number" id="plive-${safeId}" value="${ps.currentGamePts||0}" min="0" onchange="updatePlayerLive('${p.name}','${safeId}')" style="width:45px">
+    </div>`;
+  }
+
+  html += `</div></div>`;
+
+  html += `<div style="display:flex;gap:8px;margin-top:12px">
+    <button class="btn active" onclick="saveAllAdmin()">💾 Save All</button>
+    <button class="btn" onclick="if(confirm('Reset all scores and statuses?')){state=defaultState();saveState();render();renderAdmin();}">🗑 Reset All</button>
+    <button class="btn" onclick="exportState()">📋 Export State</button>
+    <button class="btn" onclick="importState()">📥 Import State</button>
+  </div>`;
+
+  document.getElementById('admin-panel').innerHTML = html;
+}
+
+// ============================================================
+// ADMIN HANDLERS
+// ============================================================
+function toggleOwner(owner) {
+  expandedOwner = expandedOwner === owner ? null : owner;
+  renderStandings();
+}
+
+function updateTeamStatus(team, status) {
+  if (status === "playing") {
+    state.teams[team].status = "active";
+    state.teams[team].currentGame = state.teams[team].currentGame || {teamScore:0,oppScore:0,minutesRemaining:40,opponent:"TBD"};
+  } else {
+    state.teams[team].status = status;
+    if (status !== "active") state.teams[team].currentGame = null;
+    else state.teams[team].currentGame = null;
+  }
+  saveState(); render();
+}
+
+function updateTeamGames(team, val) {
+  state.teams[team].gamesPlayed = parseInt(val) || 0;
+  saveState(); render();
+}
+
+function updateLiveGame(team) {
+  const safe = team.replace(/[^a-zA-Z]/g,'');
+  const score = parseInt(document.getElementById(`live-score-${safe}`)?.value) || 0;
+  const opp = parseInt(document.getElementById(`live-opp-${safe}`)?.value) || 0;
+  const min = parseFloat(document.getElementById(`live-min-${safe}`)?.value) || 0;
+
+  if (score > 0 || opp > 0 || min > 0) {
+    const margin = score - opp;
+    state.teams[team].currentGame = {
+      teamScore: score, oppScore: opp,
+      minutesRemaining: min,
+      winProb: calcLiveWinProb(margin, min),
+      opponent: "Opponent"
+    };
+  } else {
+    state.teams[team].currentGame = null;
+  }
+  saveState(); render();
+}
+
+function updatePlayerScores(name, safeId) {
+  const val = document.getElementById(`pscore-${safeId}`)?.value || "";
+  const pts = val.split(",").map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+  state.players[name].completedGamePts = pts;
+  saveState(); render();
+}
+
+function updatePlayerLive(name, safeId) {
+  const val = parseInt(document.getElementById(`plive-${safeId}`)?.value) || 0;
+  state.players[name].currentGamePts = val;
+  saveState(); render();
+}
+
+function saveAllAdmin() {
+  // Re-read all admin fields
+  const relevantTeams = [...new Set(PLAYERS.map(p => p.team))];
+  for (const p of PLAYERS) {
+    const safeId = p.name.replace(/[^a-zA-Z]/g,'');
+    const compEl = document.getElementById(`pscore-${safeId}`);
+    const liveEl = document.getElementById(`plive-${safeId}`);
+    if (compEl) {
+      const pts = compEl.value.split(",").map(s=>parseFloat(s.trim())).filter(n=>!isNaN(n));
+      state.players[p.name].completedGamePts = pts;
+    }
+    if (liveEl) {
+      state.players[p.name].currentGamePts = parseInt(liveEl.value) || 0;
+    }
+  }
+  for (const team of relevantTeams) {
+    updateLiveGame(team);
+  }
+  saveState(); render();
+  alert("Saved!");
+}
+
+function exportState() {
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "mm_pool_state.json"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importState() {
+  const input = document.createElement("input");
+  input.type = "file"; input.accept = ".json";
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    const text = await file.text();
+    try {
+      const imported = JSON.parse(text);
+      state = imported;
+      saveState(); render();
+      if (currentTab === 'admin') renderAdmin();
+      alert("State imported!");
+    } catch(e) { alert("Invalid JSON file"); }
+  };
+  input.click();
+}
+
+async function manualRefresh() {
+  document.getElementById("refreshBtn").textContent = "⏳ Loading...";
+  await updateFromESPN();
+  document.getElementById("refreshBtn").textContent = "↻ Refresh";
+}
+
+// ============================================================
+// INIT & AUTO-REFRESH
+// ============================================================
+render();
+
+// Try ESPN on load
+setTimeout(() => updateFromESPN(), 1000);
+
+// Auto-refresh every 60 seconds
+setInterval(() => {
+  updateFromESPN();
+}, 60000);
+</script>
+</body>
+</html>
