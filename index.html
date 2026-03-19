@@ -259,7 +259,7 @@ function loadState(){try{const s=localStorage.getItem("mm2026_v2");if(s){const p
 function ensure(s){
   for(const t of Object.keys(BASE_PROBS))if(!s.teams[t])s.teams[t]={status:"active",gamesPlayed:0,liveGame:null};
   for(const p of PLAYERS_DEFAULT)if(!s.players[p.name])s.players[p.name]={completedPts:[],livePts:0};
-  if(!s.probOverrides)s.probOverrides={};if(!s.playerSwaps)s.playerSwaps={};return s;
+  if(!s.probOverrides)s.probOverrides={};if(!s.playerSwaps)s.playerSwaps={};if(!s._finalizedGameIds)s._finalizedGameIds=[];return s;
 }
 function saveState(){state.lastUpdated=new Date().toISOString();localStorage.setItem("mm2026_v2",JSON.stringify(state));}
 
@@ -711,7 +711,11 @@ async function fetchESPNScores() {
     if (!data.games) throw new Error("No games data");
 
     let hasLive = false;
-    const liveGameIds = []; // games with our players that are live
+    const boxScoreGameIds = []; // games needing box score fetch (live OR final with our players)
+    const finalizedTeams = []; // teams whose games just went final this cycle
+
+    // Track which games we've already finalized to avoid double-counting
+    if (!state._finalizedGameIds) state._finalizedGameIds = [];
 
     for (const game of data.games) {
       const homeName = resolveESPNTeam(game.home.name, game.home.abbrev);
@@ -719,6 +723,12 @@ async function fetchESPNScores() {
       const isLive = game.status.type === "STATUS_IN_PROGRESS";
       const isFinal = game.status.type === "STATUS_FINAL" || game.status.completed;
       const minRem = getMinutesRemaining(game.status);
+
+      const hasOurTeam = (name) => name && state.teams[name] &&
+        PLAYERS_DEFAULT.some(p => {
+          const sw = state.playerSwaps[p.name];
+          return (sw ? sw.newTeam : p.team) === name;
+        });
 
       for (const [teamName, isHome] of [[homeName, true], [awayName, false]]) {
         if (!teamName || !state.teams[teamName]) continue;
@@ -736,52 +746,49 @@ async function fetchESPNScores() {
             winP = isHome ? game.winProb : 1 - game.winProb;
           }
 
-          // Only update live game if we don't have a manual moneyline override
           const existingLG = ts.liveGame;
           const hasManualML = existingLG && existingLG.moneyline != null && existingLG.moneyline !== 0;
 
           ts.liveGame = {
-            teamScore,
-            oppScore,
+            teamScore, oppScore,
             minutesRemaining: minRem,
             moneyline: hasManualML ? existingLG.moneyline : null,
             opponent: oppName,
-            espnWinProb: winP, // store ESPN's win prob separately
+            espnWinProb: winP,
           };
 
-          // Check if any of our players are on this team
-          const hasOurPlayers = PLAYERS_DEFAULT.some(p => {
-            const sw = state.playerSwaps[p.name];
-            return (sw ? sw.newTeam : p.team) === teamName;
-          });
-          if (hasOurPlayers) liveGameIds.push(game.id);
+          if (hasOurTeam(teamName)) boxScoreGameIds.push(game.id);
 
         } else if (isFinal) {
-          if (ts.liveGame) {
-            // Game just ended — we need to finalize
-            if (teamScore > oppScore) {
-              // Won — increment games played if not already counted
-              // (we check by comparing to see if this is a new win)
-              ts.liveGame = null;
-              // Note: gamesPlayed should be updated manually or we auto-increment
-              // Auto-increment only if it looks like a new result
+          const alreadyFinalized = state._finalizedGameIds.includes(game.id + "_" + teamName);
+
+          if (!alreadyFinalized) {
+            // This game just ended (or we're seeing it final for the first time)
+            const won = teamScore > oppScore;
+
+            if (won) {
+              ts.gamesPlayed = (ts.gamesPlayed || 0) + 1;
             } else {
               ts.status = "eliminated";
-              ts.liveGame = null;
             }
-          } else if (teamScore > 0 || oppScore > 0) {
-            // Final game we may not have tracked as live
-            if (teamScore < oppScore && ts.status !== "eliminated") {
-              ts.status = "eliminated";
+            ts.liveGame = null;
+
+            // Mark as finalized so we don't re-process next cycle
+            state._finalizedGameIds.push(game.id + "_" + teamName);
+
+            // Need box score to get final player point totals
+            if (hasOurTeam(teamName)) {
+              finalizedTeams.push(teamName);
+              boxScoreGameIds.push(game.id);
             }
           }
         }
       }
     }
 
-    // Fetch box scores for live games with our players
-    const uniqueIds = [...new Set(liveGameIds)];
-    for (const gid of uniqueIds.slice(0, 6)) {
+    // Fetch box scores for all relevant games (live AND newly finalized)
+    const uniqueIds = [...new Set(boxScoreGameIds)];
+    for (const gid of uniqueIds.slice(0, 8)) {
       try {
         const bResp = await fetch(`${WORKER_URL}/boxscore?gameId=${gid}`, {
           signal: AbortSignal.timeout(8000)
@@ -793,11 +800,26 @@ async function fetchESPNScores() {
           const teamName = resolveESPNTeam(ps.team, ps.abbrev);
           if (!teamName) continue;
           const ourPlayerKey = matchPlayer(ps.name, teamName);
-          if (ourPlayerKey && state.players[ourPlayerKey]) {
-            state.players[ourPlayerKey].livePts = ps.pts;
+          if (!ourPlayerKey || !state.players[ourPlayerKey]) continue;
+
+          const playerState = state.players[ourPlayerKey];
+
+          if (finalizedTeams.includes(teamName)) {
+            // Game is FINAL: move points to completedPts, clear livePts
+            playerState.completedPts = playerState.completedPts || [];
+            playerState.completedPts.push(ps.pts);
+            playerState.livePts = 0;
+          } else {
+            // Game is LIVE: update livePts
+            playerState.livePts = ps.pts;
           }
         }
       } catch (e) { /* skip failed box score */ }
+    }
+
+    // Keep _finalizedGameIds from growing forever (trim to last 200)
+    if (state._finalizedGameIds.length > 200) {
+      state._finalizedGameIds = state._finalizedGameIds.slice(-100);
     }
 
     lastESPNFetch = new Date();
