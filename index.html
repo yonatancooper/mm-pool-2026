@@ -51,7 +51,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .progress-fill{height:100%;border-radius:2px;transition:width .5s ease}
 .player-panel{display:none;background:var(--surface2);border-radius:0 0 8px 8px;margin-top:-4px;margin-bottom:4px;overflow:hidden}
 .player-panel.open{display:block}
-.player-row{display:grid;grid-template-columns:1fr auto auto auto auto;align-items:center;padding:10px 16px;border-bottom:1px solid var(--surface3);gap:12px;font-size:14px}
+.player-row{display:grid;grid-template-columns:1fr 100px 60px 70px 55px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--surface3);gap:0;font-size:14px}
 .player-row:last-child{border-bottom:none}
 .player-info{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .player-team-badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:0.5px}
@@ -93,12 +93,17 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 @media(max-width:768px){
   .header-inner{flex-direction:column;align-items:flex-start}
   .title{font-size:22px}
-  .player-row{grid-template-columns:1fr auto auto;font-size:12px}
+  .player-row{grid-template-columns:1fr 80px 45px 55px;font-size:12px}
   .player-exp{display:none}
   .admin-grid{grid-template-columns:1fr}
   .container{padding:12px}
 }
 .footer{text-align:center;padding:24px;font-size:11px;color:var(--text3);border-top:1px solid var(--surface3);margin-top:40px}
+.sort-controls{display:flex;gap:6px;align-items:center;margin-bottom:12px}
+.sort-controls span{font-family:'Oswald',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3)}
+.sort-btn{font-family:'Oswald',sans-serif;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:1px;padding:5px 12px;border-radius:5px;border:1px solid var(--surface3);background:var(--surface2);color:var(--text3);cursor:pointer;transition:all .2s}
+.sort-btn:hover{color:var(--text)}
+.sort-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -382,7 +387,7 @@ function importJSON(){
 }
 
 // === UI ===
-let expandedOwner=null,currentTab="standings";
+let expandedOwner=null,currentTab="standings",sortBy="projected";
 function switchTab(tab){
   currentTab=tab;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
@@ -396,12 +401,25 @@ function render(){renderStandings();if(currentTab==='games')renderGames();}
 function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),3000);}
 
 function renderStandings(){
-  const standings=calcStandings();const maxP=Math.max(...standings.map(s=>s.totalProjected));
-  let h=`<table class="standings-table"><thead><tr><th style="width:50px"></th><th>Name</th><th class="r">Actual</th><th class="r">Projected</th><th class="r" style="width:120px"></th></tr></thead><tbody>`;
+  const standings=calcStandings();
+
+  // Sort by selected criteria
+  if(sortBy==="actual") standings.sort((a,b)=>b.totalActual-a.totalActual);
+  else standings.sort((a,b)=>b.totalProjected-a.totalProjected);
+
+  const maxVal=Math.max(...standings.map(s=>sortBy==="actual"?s.totalActual:s.totalProjected));
+
+  let h=`<div class="sort-controls"><span>Sort by:</span>
+    <button class="sort-btn ${sortBy==='projected'?'active':''}" onclick="sortBy='projected';renderStandings()">Projected</button>
+    <button class="sort-btn ${sortBy==='actual'?'active':''}" onclick="sortBy='actual';renderStandings()">Actual</button>
+  </div>`;
+
+  h+=`<table class="standings-table"><thead><tr><th style="width:50px"></th><th>Name</th><th class="r">Actual</th><th class="r">Projected</th><th class="r" style="width:120px"></th></tr></thead><tbody>`;
   standings.forEach((s,i)=>{
     const rank=i+1;const rc=rank<=3?`rank-${rank}`:"rank-other";const expanded=expandedOwner===s.owner;
     const hasLive=s.players.some(p=>p.status==="live");
-    const bar=maxP>0?(s.totalProjected/maxP*100):0;
+    const sortVal=sortBy==="actual"?s.totalActual:s.totalProjected;
+    const bar=maxVal>0?(sortVal/maxVal*100):0;
     const bc=rank===1?"var(--gold)":rank===2?"var(--silver)":rank===3?"var(--bronze)":"var(--accent)";
     h+=`<tr class="standings-row ${expanded?'expanded':''}" onclick="toggleOwner('${s.owner}')">
       <td><div class="rank-badge ${rc}">${rank}</div></td>
@@ -410,7 +428,7 @@ function renderStandings(){
       <td class="pts projected"><span class="pts-label">Projected</span>${s.totalProjected.toFixed(1)}</td>
       <td><div class="progress-bar"><div class="progress-fill" style="width:${bar}%;background:${bc}"></div></div></td></tr>`;
     h+=`<tr><td colspan="5" style="padding:0;border:none"><div class="player-panel ${expanded?'open':''}">`;
-    h+=`<div class="player-row" style="font-size:10px;color:var(--text3);font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:1px;padding:6px 16px"><span>Player</span><span>Status</span><span style="text-align:right">Actual</span><span style="text-align:right">Proj</span><span style="text-align:right">Exp G</span></div>`;
+    h+=`<div class="player-row" style="font-size:10px;color:var(--text3);font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:1px;padding:6px 16px;border-bottom:1px solid var(--surface3)"><span>Player</span><span style="text-align:center;justify-self:center">Status</span><span style="text-align:right;justify-self:end">Actual</span><span style="text-align:right;justify-self:end">Proj</span><span style="text-align:right;justify-self:end">Exp G</span></div>`;
     for(const p of s.players){
       const tc=TEAM_COLORS[p.team]||"#555";
       let st="",sc=p.status;
@@ -418,7 +436,7 @@ function renderStandings(){
       else if(p.status==="eliminated")st="ELIMINATED";
       else if(p.status==="active")st="✓ ALIVE";
       else st="UPCOMING";
-      h+=`<div class="player-row"><div class="player-info"><span class="player-team-badge" style="background:${tc};color:#fff">${TEAM_META[p.team]?.seed||""} ${p.team}</span><span class="player-name">${p.name}${p.swapped?' ⇄':''}</span><span class="player-ppg">${p.ppg} ppg</span></div><span class="player-status ${sc}">${st}</span><span class="player-pts">${p.actual>0?p.actual.toFixed(0):"—"}</span><span class="player-proj">${p.projected.toFixed(1)}</span><span class="player-exp">${p.expGames.toFixed(2)}</span></div>`;
+      h+=`<div class="player-row"><div class="player-info"><span class="player-team-badge" style="background:${tc};color:#fff">${TEAM_META[p.team]?.seed||""} ${p.team}</span><span class="player-name">${p.name}${p.swapped?' ⇄':''}</span><span class="player-ppg">${p.ppg} ppg</span></div><span class="player-status ${sc}" style="justify-self:center">${st}</span><span class="player-pts" style="justify-self:end">${p.actual>0?p.actual.toFixed(0):"—"}</span><span class="player-proj" style="justify-self:end">${p.projected.toFixed(1)}</span><span class="player-exp" style="justify-self:end">${p.expGames.toFixed(2)}</span></div>`;
     }
     h+=`</div></td></tr>`;
   });
@@ -586,6 +604,11 @@ function saveAdmin(){
 }
 
 // === INIT ===
+// Apply known swaps
+if (!state.playerSwaps["Patrick Ngongba"]) {
+  state.playerSwaps["Patrick Ngongba"] = {newName:"Oscar Cluff", newTeam:"Purdue", newPpg:10.3};
+  saveState();
+}
 render();fetchSharedState();
 
 // ============================================================
@@ -601,23 +624,36 @@ const ESPN_TEAM_MAP={
 "Gonzaga Bulldogs":"Gonzaga","Iowa State Cyclones":"Iowa State","Alabama Crimson Tide":"Alabama",
 "Purdue Boilermakers":"Purdue","Vanderbilt Commodores":"Vanderbilt",
 "Michigan State Spartans":"Michigan State","Kansas Jayhawks":"Kansas",
-"St. John's Red Storm":"St. John's","Nebraska Cornhuskers":"Nebraska",
-"Virginia Cavaliers":"Virginia","Wisconsin Badgers":"Wisconsin",
+"St. John's Red Storm":"St. John's","St. John's (NY) Red Storm":"St. John's",
+"Nebraska Cornhuskers":"Nebraska","Virginia Cavaliers":"Virginia","Wisconsin Badgers":"Wisconsin",
 "Tennessee Volunteers":"Tennessee","Texas Tech Red Raiders":"Texas Tech",
 "BYU Cougars":"BYU","Louisville Cardinals":"Louisville",
-"Ohio State Buckeyes":"Ohio State","UCLA Bruins":"UCLA",
-"North Carolina Tar Heels":"North Carolina","Akron Zips":"Akron",
+"Ohio State Buckeyes":"Ohio State","Ohio St. Buckeyes":"Ohio State","Ohio State":"Ohio State",
+"UCLA Bruins":"UCLA","North Carolina Tar Heels":"North Carolina","Akron Zips":"Akron",
 "Kentucky Wildcats":"Kentucky","TCU Horned Frogs":"TCU",
 "Iowa Hawkeyes":"Iowa","Clemson Tigers":"Clemson",
-"Saint Mary's Gaels":"Saint Mary's","Texas A&M Aggies":"Texas A&M",
-"VCU Rams":"VCU","McNeese Cowboys":"McNeese",
+"Saint Mary's Gaels":"Saint Mary's","Saint Mary's":"Saint Mary's",
+"Texas A&M Aggies":"Texas A&M","VCU Rams":"VCU",
+"McNeese Cowboys":"McNeese","McNeese State Cowboys":"McNeese",
 "South Florida Bulls":"South Florida","UCF Knights":"UCF",
-"Northern Iowa Panthers":"Northern Iowa","Miami Hurricanes":"Miami (Fla.)",
+"Northern Iowa Panthers":"Northern Iowa",
+"Miami Hurricanes":"Miami (Fla.)","Miami (FL) Hurricanes":"Miami (Fla.)",
 "Missouri Tigers":"Missouri","Georgia Bulldogs":"Georgia",
 "Saint Louis Billikens":"Saint Louis","Santa Clara Broncos":"Santa Clara",
 "Hofstra Pride":"Hofstra","SMU Mustangs":"SMU",
 "NC State Wolfpack":"NC State","Villanova Wildcats":"Villanova",
-"Utah State Aggies":"Utah State",
+"Utah State Aggies":"Utah State","North Dakota State Bison":"North Dakota State",
+"Cal Baptist Lancers":"Cal. Baptist","California Baptist Lancers":"Cal. Baptist",
+"Furman Paladins":"Furman","Troy Trojans":"Troy",
+"Penn Quakers":"Penn","Idaho Vandals":"Idaho",
+"Kennesaw State Owls":"Kennesaw State","Queens Royals":"Queens",
+"Hawaii Rainbow Warriors":"Hawaii","High Point Panthers":"High Point",
+"UMBC Retrievers":"UMBC","Howard Bison":"Howard",
+"Wright State Raiders":"Wright State","Tennessee State Tigers":"Tennessee State",
+"Lehigh Mountain Hawks":"Lehigh","Prairie View A&M Panthers":"Prairie View",
+"Long Island Sharks":"LIU","LIU Sharks":"LIU",
+"Miami (OH) RedHawks":"Miami (OH)","Miami RedHawks":"Miami (OH)",
+"Siena Saints":"Siena",
 };
 
 function resolveESPNTeam(displayName, abbrev) {
@@ -632,7 +668,10 @@ function resolveESPNTeam(displayName, abbrev) {
     "PUR":"Purdue","VAN":"Vanderbilt","MSU":"Michigan State","KU":"Kansas","KAN":"Kansas",
     "CONN":"Connecticut","SJU":"St. John's","NEB":"Nebraska","UVA":"Virginia","WIS":"Wisconsin",
     "TENN":"Tennessee","TTU":"Texas Tech","BYU":"BYU","LOU":"Louisville","OSU":"Ohio State",
-    "UCLA":"UCLA","UNC":"North Carolina","AKR":"Akron","UK":"Kentucky","TCU":"TCU"};
+    "UCLA":"UCLA","UNC":"North Carolina","AKR":"Akron","UK":"Kentucky","TCU":"TCU",
+    "OHST":"Ohio State","OHIOS":"Ohio State","USF":"South Florida","UNI":"Northern Iowa",
+    "MIST":"Michigan State","GONZ":"Gonzaga","WICH":"Wichita State","IOWA":"Iowa",
+    "CLEM":"Clemson","VAN":"Vanderbilt","ARK":"Arkansas"};
   if (abbrMap[abbrev]) return abbrMap[abbrev];
   return null;
 }
@@ -733,13 +772,14 @@ async function fetchESPNScores() {
       for (const [teamName, isHome] of [[homeName, true], [awayName, false]]) {
         if (!teamName || !state.teams[teamName]) continue;
         const ts = state.teams[teamName];
-        if (ts.status === "eliminated") continue;
 
         const teamScore = isHome ? game.home.score : game.away.score;
         const oppScore = isHome ? game.away.score : game.home.score;
         const oppName = isHome ? (awayName || game.away.name) : (homeName || game.home.name);
 
         if (isLive) {
+          // Skip eliminated teams for live games (shouldn't happen, but guard)
+          if (ts.status === "eliminated") continue;
           hasLive = true;
           let winP = null;
           if (game.winProb != null) {
@@ -766,17 +806,20 @@ async function fetchESPNScores() {
             // This game just ended (or we're seeing it final for the first time)
             const won = teamScore > oppScore;
 
-            if (won) {
-              ts.gamesPlayed = (ts.gamesPlayed || 0) + 1;
-            } else {
-              ts.status = "eliminated";
+            // Only update status/gamesPlayed if not already processed
+            if (ts.status !== "eliminated") {
+              if (won) {
+                ts.gamesPlayed = (ts.gamesPlayed || 0) + 1;
+              } else {
+                ts.status = "eliminated";
+              }
             }
             ts.liveGame = null;
 
             // Mark as finalized so we don't re-process next cycle
             state._finalizedGameIds.push(game.id + "_" + teamName);
 
-            // Need box score to get final player point totals
+            // Need box score to get final player point totals (even for eliminated teams!)
             if (hasOurTeam(teamName)) {
               finalizedTeams.push(teamName);
               boxScoreGameIds.push(game.id);
