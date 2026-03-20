@@ -872,28 +872,48 @@ let lastESPNFetch = null;
 async function fetchESPNScores() {
   try {
     const today = new Date();
-    const dateStr = today.getFullYear() +
-      String(today.getMonth() + 1).padStart(2, '0') +
-      String(today.getDate()).padStart(2, '0');
+    const yesterday = new Date(today.getTime() - 24*60*60*1000);
+    const fmt = d => d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+    const todayStr = fmt(today);
+    const yesterdayStr = fmt(yesterday);
 
-    const resp = await fetch(`${WORKER_URL}/scoreboard?date=${dateStr}`, {
-      signal: AbortSignal.timeout(8000)
-    });
-    if (!resp.ok) throw new Error("Worker returned " + resp.status);
-    const data = await resp.json();
-    if (!data.games) throw new Error("No games data");
+    // Fetch both today and yesterday to catch late-finishing games
+    const allGames = [];
+    for (const dateStr of [todayStr, yesterdayStr]) {
+      try {
+        const resp = await fetch(`${WORKER_URL}/scoreboard?date=${dateStr}`, {
+          signal: AbortSignal.timeout(8000)
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.games) {
+            console.log(`[MM Pool] Scoreboard ${dateStr}: ${data.games.length} games`);
+            allGames.push(...data.games);
+          }
+        }
+      } catch(e) { console.warn(`[MM Pool] Scoreboard ${dateStr} failed:`, e.message); }
+    }
+
+    if (allGames.length === 0) throw new Error("No games from either day");
+
+    // Deduplicate by game id (same game might appear in both days' feeds)
+    const seen = new Set();
+    const games = allGames.filter(g => { if (seen.has(g.id)) return false; seen.add(g.id); return true; });
 
     let hasLive = false;
-    const liveGameIds = [];      // PRIORITY: live games with our players
-    const finalGameIds = [];     // SECONDARY: newly-final games with our players
-    const finalizedTeams = new Set(); // teams whose games just went final
+    const liveGameIds = [];
+    const finalGameIds = [];
+    const finalizedTeams = new Set();
+    const teamsSeenInGames = new Set(); // Track which teams appear in any game
 
     // Track which games we've already finalized to avoid double-counting
     if (!state._finalizedGameIds) state._finalizedGameIds = [];
 
-    for (const game of data.games) {
+    for (const game of games) {
       const homeName = resolveESPNTeam(game.home.name, game.home.abbrev);
       const awayName = resolveESPNTeam(game.away.name, game.away.abbrev);
+      if (homeName) teamsSeenInGames.add(homeName);
+      if (awayName) teamsSeenInGames.add(awayName);
       const statusType = game.status.type || "";
       const isFinal = statusType === "STATUS_FINAL" || game.status.completed;
       const isScheduled = statusType === "STATUS_SCHEDULED" || statusType === "STATUS_POSTPONED" || statusType === "";
@@ -1022,6 +1042,15 @@ async function fetchESPNScores() {
     // Then fetch final box scores (one-time operation)
     for (const gid of finalUnique) {
       await fetchAndApplyBoxScore(gid, true);
+    }
+
+    // CLEANUP: Clear stale liveGame for teams that aren't in ANY scoreboard response
+    // This handles the case where a game finished but the scoreboard date rolled over
+    for (const [teamName, ts] of Object.entries(state.teams)) {
+      if (ts.liveGame && !teamsSeenInGames.has(teamName)) {
+        console.log(`[MM Pool] Clearing stale liveGame for ${teamName} (not in any scoreboard)`);
+        ts.liveGame = null;
+      }
     }
 
     // CLEANUP: Clear stale livePts for ALL players on finalized/eliminated teams
