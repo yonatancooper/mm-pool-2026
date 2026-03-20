@@ -653,28 +653,80 @@ if (!state.playerSwaps["Patrick Ngongba"]) {
   state.playerSwaps["Patrick Ngongba"] = {newName:"Oscar Cluff", newTeam:"Purdue", newPpg:10.3};
 }
 
-// Sanitize state: fix any double-counted completedPts and stale livePts
+// Sanitize state using verified box score data
 (function sanitize(){
+  // Verified scores from official box scores (updated after each game day)
+  const VERIFIED={
+    // Ohio State 64, TCU 66 — Ohio State ELIMINATED
+    "Bruce Thornton":{completedPts:[10],team:"Ohio State",status:"eliminated",gp:0},
+    // Duke 71, Siena 65 — Duke WON
+    "Cameron Boozer":{completedPts:[22],team:"Duke",gp:1},
+    "Cayden Boozer":{completedPts:[19],team:"Duke",gp:1},
+    "Isaiah Evans":{completedPts:[16],team:"Duke",gp:1},
+    // Vanderbilt 78, McNeese 68 — Vanderbilt WON
+    "Tyler Tanner":{completedPts:[26],team:"Vanderbilt",gp:1},
+    "Duke Miles":{completedPts:[13],team:"Vanderbilt",gp:1},
+    // Arkansas 97, Hawaii 78 — Arkansas WON
+    "Darius Acuff Jr.":{completedPts:[24],team:"Arkansas",gp:1},
+    "Meleek Thomas":{completedPts:[21],team:"Arkansas",gp:1},
+    // Nebraska 76, Troy 47 — Nebraska WON
+    "Pryce Sandfort":{completedPts:[23],team:"Nebraska",gp:1},
+    // Wisconsin 82, High Point 83 — Wisconsin ELIMINATED
+    "John Blackwell":{completedPts:[22],team:"Wisconsin",status:"eliminated",gp:0},
+    "Nick Boyd":{completedPts:[27],team:"Wisconsin",status:"eliminated",gp:0},
+    // Michigan 101, Howard 80 — Michigan WON
+    "Morez Johnson Jr.":{completedPts:[21],team:"Michigan",gp:1},
+    "Aday Mara":{completedPts:[19],team:"Michigan",gp:1},
+    "Elliot Cadeau":{completedPts:[5],team:"Michigan",gp:1},
+    "Yaxel Lendeborg":{completedPts:[9],team:"Michigan",gp:1},
+    // Michigan State 92, NDSU 67 — Michigan State WON
+    "Jaxon Kohler":{completedPts:[12],team:"Michigan State",gp:1},
+    "Jeremy Fears Jr.":{completedPts:[7],team:"Michigan State",gp:1},
+    "Coen Carr":{completedPts:[17],team:"Michigan State",gp:1},
+  };
+
   let fixed=false;
-  for(const p of PLAYERS_DEFAULT){
-    const sw=state.playerSwaps[p.name];
-    const teamName=sw?sw.newTeam:p.team;
-    const ts=state.teams[teamName];
-    const ps=state.players[p.name];
-    if(!ps||!ts)continue;
-    // Trim completedPts if more entries than team's gamesPlayed
-    const gp=ts.gamesPlayed||0;
-    if(Array.isArray(ps.completedPts)&&ps.completedPts.length>gp){
-      console.log(`[MM Pool] Sanitize: ${p.name} had ${ps.completedPts.length} completedPts but team has ${gp} gamesPlayed. Trimming to last ${gp}.`);
-      ps.completedPts=ps.completedPts.slice(-gp);
-      fixed=true;
-    }
-    // Clear livePts if team is not in a live game
-    if(ps.livePts>0&&(!ts.liveGame)){
-      console.log(`[MM Pool] Sanitize: ${p.name} had stale livePts=${ps.livePts}, clearing.`);
+  // Apply verified scores
+  for(const[name,v] of Object.entries(VERIFIED)){
+    const ps=state.players[name];
+    if(!ps)continue;
+    const curTotal=(ps.completedPts||[]).reduce((a,b)=>a+b,0)+(ps.livePts||0);
+    const verTotal=v.completedPts.reduce((a,b)=>a+b,0);
+    if(curTotal!==verTotal||ps.livePts>0){
+      console.log(`[MM Pool] Verified fix: ${name} was ${curTotal} → ${verTotal}`);
+      ps.completedPts=v.completedPts;
       ps.livePts=0;
       fixed=true;
     }
+    // Fix team state
+    const ts=state.teams[v.team];
+    if(ts){
+      if(v.status==="eliminated"&&ts.status!=="eliminated"){ts.status="eliminated";ts.liveGame=null;fixed=true;}
+      if(v.gp!=null&&v.gp>0){ts.gamesPlayed=Math.max(ts.gamesPlayed||0,v.gp);fixed=true;}
+    }
+  }
+
+  // General cleanup: any player whose team hasn't played should have zero scores
+  for(const p of PLAYERS_DEFAULT){
+    const ps=state.players[p.name];
+    if(!ps)continue;
+    const sw=state.playerSwaps[p.name];
+    const teamName=sw?sw.newTeam:p.team;
+    const ts=state.teams[teamName];
+    if(!ts)continue;
+    const gp=ts.gamesPlayed||0;
+    // Fix slice(-0) bug: if gp=0, completedPts must be empty
+    if(gp===0&&ts.status!=="eliminated"&&(ps.completedPts||[]).length>0){
+      console.log(`[MM Pool] Sanitize: ${p.name} team ${teamName} has 0 gamesPlayed, clearing completedPts`);
+      ps.completedPts=[];ps.livePts=0;fixed=true;
+    }
+    // Trim if too many entries
+    if(gp>0&&(ps.completedPts||[]).length>gp){
+      ps.completedPts=ps.completedPts.slice(ps.completedPts.length-gp);
+      fixed=true;
+    }
+    // Clear stale livePts if team not in live game
+    if(ps.livePts>0&&!ts.liveGame){ps.livePts=0;fixed=true;}
   }
   if(fixed)saveState();
 })();
@@ -728,22 +780,27 @@ const ESPN_TEAM_MAP={
 
 function resolveESPNTeam(displayName, abbrev) {
   if (ESPN_TEAM_MAP[displayName]) return ESPN_TEAM_MAP[displayName];
-  // Fuzzy: check if any of our team names is contained in the display name
-  for (const key of Object.keys(BASE_PROBS)) {
-    if (displayName && displayName.toLowerCase().includes(key.toLowerCase())) return key;
-  }
-  // Try abbreviation-based common ones
+  // Try abbreviation first (more precise than fuzzy)
   const abbrMap = {"DUKE":"Duke","MICH":"Michigan","ARIZ":"Arizona","FLA":"Florida","ARK":"Arkansas",
     "HOU":"Houston","ILL":"Illinois","GONZ":"Gonzaga","ISU":"Iowa State","BAMA":"Alabama",
     "PUR":"Purdue","VAN":"Vanderbilt","MSU":"Michigan State","KU":"Kansas","KAN":"Kansas",
     "CONN":"Connecticut","SJU":"St. John's","NEB":"Nebraska","UVA":"Virginia","WIS":"Wisconsin",
     "TENN":"Tennessee","TTU":"Texas Tech","BYU":"BYU","LOU":"Louisville","OSU":"Ohio State",
     "UCLA":"UCLA","UNC":"North Carolina","AKR":"Akron","UK":"Kentucky","TCU":"TCU",
-    "OHST":"Ohio State","OHIOS":"Ohio State","USF":"South Florida","UNI":"Northern Iowa",
-    "MIST":"Michigan State","GONZ":"Gonzaga","WICH":"Wichita State","IOWA":"Iowa",
-    "CLEM":"Clemson","VAN":"Vanderbilt","ARK":"Arkansas"};
+    "OHST":"Ohio State","USF":"South Florida","UNI":"Northern Iowa",
+    "IOWA":"Iowa","CLEM":"Clemson"};
   if (abbrMap[abbrev]) return abbrMap[abbrev];
-  return null;
+  // Fuzzy: find the LONGEST matching team name to prevent "Michigan" matching before "Michigan State"
+  if (!displayName) return null;
+  const dn = displayName.toLowerCase();
+  let bestMatch = null, bestLen = 0;
+  for (const key of Object.keys(BASE_PROBS)) {
+    if (dn.includes(key.toLowerCase()) && key.length > bestLen) {
+      bestMatch = key; bestLen = key.length;
+    }
+  }
+  if (bestMatch) console.log(`[MM Pool] Fuzzy team resolve: "${displayName}" → "${bestMatch}"`);
+  return bestMatch;
 }
 
 function matchPlayer(espnName, teamName) {
@@ -789,14 +846,21 @@ function matchPlayer(espnName, teamName) {
 }
 
 function getMinutesRemaining(status) {
-  if (status.type === "STATUS_FINAL" || status.completed) return 0;
-  if (status.type === "STATUS_SCHEDULED" || status.type === "STATUS_POSTPONED") return 40;
+  const type = status.type || "";
+  if (type === "STATUS_FINAL" || status.completed) return 0;
+  if (type === "STATUS_SCHEDULED" || type === "STATUS_POSTPONED" || type === "") return 40;
+  if (type === "STATUS_HALFTIME") return 20; // Explicitly handle halftime
   const period = status.period || 1;
   const clock = status.clock || "20:00";
   const parts = clock.split(":");
   const mins = parseInt(parts[0]) || 0;
   const secs = parseInt(parts[1]) || 0;
   const clockMins = mins + secs / 60;
+  if (type === "STATUS_END_PERIOD") {
+    // End of a period: clock is 0, next period hasn't started
+    if (period === 1) return 20; // End of 1st half = 20 min left
+    return 0; // End of 2nd half or OT
+  }
   if (period === 1) return clockMins + 20;
   if (period === 2) return clockMins;
   return clockMins; // OT
@@ -830,9 +894,12 @@ async function fetchESPNScores() {
     for (const game of data.games) {
       const homeName = resolveESPNTeam(game.home.name, game.home.abbrev);
       const awayName = resolveESPNTeam(game.away.name, game.away.abbrev);
-      const isLive = game.status.type === "STATUS_IN_PROGRESS";
-      const isFinal = game.status.type === "STATUS_FINAL" || game.status.completed;
+      const statusType = game.status.type || "";
+      const isFinal = statusType === "STATUS_FINAL" || game.status.completed;
+      const isScheduled = statusType === "STATUS_SCHEDULED" || statusType === "STATUS_POSTPONED" || statusType === "";
+      const isLive = !isFinal && !isScheduled; // Halftime, end of period, delays, etc. are all "live"
       const minRem = getMinutesRemaining(game.status);
+      if (isLive) console.log(`[MM Pool] Live game: ${game.home.name} vs ${game.away.name} (status: ${statusType}, ${minRem.toFixed(1)}m rem)`);
 
       const hasOurTeam = (name) => name && state.teams[name] &&
         PLAYERS_DEFAULT.some(p => {
