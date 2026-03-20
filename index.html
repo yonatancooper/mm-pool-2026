@@ -137,6 +137,12 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 <script>
 const GITHUB_USER="yonatancooper",GITHUB_REPO="mm-pool-2026",STATE_FILE="state.json";
 const RAW_URL=`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${STATE_FILE}`;
+
+// Admin key: set this in your browser console with: localStorage.setItem("mm_admin_key","YOUR_SECRET")
+// Then the same secret must be set as ADMIN_KEY environment variable in your Cloudflare Worker
+const ADMIN_KEY = localStorage.getItem("mm_admin_key") || "";
+const IS_ADMIN = ADMIN_KEY.length > 0;
+
 const ROUND_NAMES=["R64","R32","S16","E8","F4","CG","WIN"];
 const OWNERS=["Aidan","DiLillo","Garrett","Goldsmith","Goldstein","Malichio","Noah","Troy","Waller","Yonatan"];
 
@@ -405,32 +411,52 @@ function localStateHasSubstance(){
 async function fetchSharedState(){
   try{
     document.getElementById("syncStatus").textContent="Syncing...";
-    const r=await fetch(RAW_URL+"?t="+Date.now(),{signal:AbortSignal.timeout(5000)});
-    if(!r.ok)throw new Error("none");
-    const remote=await r.json();
-    if(remote.version===2&&remote.lastUpdated){
+    let remote=null;
+    // PRIMARY: Pull from Worker KV
+    try{
+      const r=await fetch(`${WORKER_URL}/state`,{signal:AbortSignal.timeout(5000)});
+      if(r.ok){remote=await r.json();console.log("[MM Pool] Sync: Got state from Worker KV");}
+    }catch(e){console.warn("[MM Pool] Worker KV failed:",e.message);}
+    // FALLBACK: Pull from GitHub raw
+    if(!remote){
+      try{
+        const r=await fetch(RAW_URL+"?t="+Date.now(),{signal:AbortSignal.timeout(5000)});
+        if(r.ok){remote=await r.json();console.log("[MM Pool] Sync: Fell back to GitHub");}
+      }catch(e){console.warn("[MM Pool] GitHub fallback failed:",e.message);}
+    }
+    if(remote&&remote.version===2&&remote.lastUpdated){
       const hasLocal=localStateHasSubstance();
       const rt=new Date(remote.lastUpdated).getTime();
       const lt=state.lastUpdated?new Date(state.lastUpdated).getTime():0;
-
       if(!hasLocal){
-        // Fresh/empty local state: ALWAYS take remote
-        console.log("[MM Pool] Sync: Local state is empty, taking remote");
+        console.log("[MM Pool] Sync: Local is empty, taking remote");
         state=ensure(remote);saveState();render();showToast("Synced with latest data");
-      } else if(rt>lt){
-        // Remote is newer: take it
+      }else if(rt>lt){
         console.log("[MM Pool] Sync: Remote is newer, updating");
         state=ensure(remote);saveState();render();showToast("Synced with latest data");
-      } else {
+      }else{
         console.log("[MM Pool] Sync: Local is up to date");
-        showToast("Already up to date");
       }
     }
-    document.getElementById("syncStatus").textContent="Synced "+new Date().toLocaleTimeString();
+    document.getElementById("syncStatus").textContent=(IS_ADMIN?"👑 Admin · ":"")+"Synced "+new Date().toLocaleTimeString();
   }catch(e){
-    console.warn("[MM Pool] Sync failed:", e.message);
+    console.warn("[MM Pool] Sync failed:",e.message);
     document.getElementById("syncStatus").textContent="Local mode";
   }
+}
+
+async function pushStateToWorker(){
+  if(!IS_ADMIN)return;
+  try{
+    const r=await fetch(`${WORKER_URL}/state`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json","X-Admin-Key":ADMIN_KEY},
+      body:JSON.stringify(state),
+      signal:AbortSignal.timeout(5000),
+    });
+    if(r.ok){console.log("[MM Pool] State pushed to Worker KV");}
+    else{const err=await r.json().catch(()=>({}));console.warn("[MM Pool] Push failed:",err.error||r.status);}
+  }catch(e){console.warn("[MM Pool] Push failed:",e.message);}
 }
 
 function exportJSON(){
@@ -672,7 +698,7 @@ function saveAdmin(){
     if(nn&&nt&&!isNaN(np))state.playerSwaps[p.name]={newName:nn,newTeam:nt,newPpg:np};
     else delete state.playerSwaps[p.name];
   }
-  saveState();render();showToast("Saved! Export & upload to GitHub to share.");
+  saveState();pushStateToWorker();render();showToast(IS_ADMIN?"Saved & synced to all users!":"Saved locally.");
 }
 
 // === INIT ===
@@ -761,13 +787,17 @@ if (!state.playerSwaps["Patrick Ngongba"]) {
 
 render();
 
-// Init: sync from GitHub FIRST, then start ESPN auto-fetch
+// Init: sync from Worker/GitHub FIRST, then start ESPN
 (async function init(){
+  if(IS_ADMIN)console.log("[MM Pool] Running as ADMIN — state will auto-push to Worker KV");
+  else console.log("[MM Pool] Running as viewer — pulling shared state from Worker KV");
   await fetchSharedState();
-  // Now start ESPN (sync is done, won't race)
+  // Start ESPN auto-fetch (admin gets live data, viewers benefit from admin's pushes)
   setTimeout(startAutoFetch, 1000);
-  // Re-sync from GitHub every 5 minutes (picks up your exported state.json updates)
-  setInterval(fetchSharedState, 5 * 60 * 1000);
+  // If admin, push current state immediately (in case KV is empty)
+  if(IS_ADMIN) pushStateToWorker();
+  // Re-sync periodically: admin every 2min (backup), viewers every 60s (get admin's updates fast)
+  setInterval(fetchSharedState, IS_ADMIN ? 2*60*1000 : 60*1000);
 })();
 
 // ============================================================
@@ -1139,6 +1169,7 @@ async function fetchESPNScores() {
 
     lastESPNFetch = new Date();
     saveState();
+    pushStateToWorker(); // Auto-push to KV if admin
     render();
     updateLiveIndicator(hasLive, true);
     return true;
