@@ -100,24 +100,24 @@
       "status": "active",
       "gamesPlayed": 0,
       "liveGame": {
-        "teamScore": 2,
-        "oppScore": 8,
-        "minutesRemaining": 35.45,
+        "teamScore": 7,
+        "oppScore": 10,
+        "minutesRemaining": 34.733333333333334,
         "moneyline": null,
         "opponent": "Saint Louis",
-        "espnWinProb": 0.351
+        "espnWinProb": 0.437
       }
     },
     "Saint Louis": {
       "status": "active",
       "gamesPlayed": 0,
       "liveGame": {
-        "teamScore": 8,
-        "oppScore": 2,
-        "minutesRemaining": 35.45,
+        "teamScore": 10,
+        "oppScore": 7,
+        "minutesRemaining": 34.733333333333334,
         "moneyline": null,
         "opponent": "Georgia",
-        "espnWinProb": 0.649
+        "espnWinProb": 0.563
       }
     },
     "Texas Tech": {
@@ -330,23 +330,23 @@
       "gamesPlayed": 0,
       "liveGame": {
         "teamScore": 26,
-        "oppScore": 17,
-        "minutesRemaining": 28.833333333333336,
+        "oppScore": 22,
+        "minutesRemaining": 25.96666666666667,
         "moneyline": null,
         "opponent": "Penn",
-        "espnWinProb": 0.987
+        "espnWinProb": 0.972
       }
     },
     "Penn": {
       "status": "active",
       "gamesPlayed": 0,
       "liveGame": {
-        "teamScore": 17,
+        "teamScore": 22,
         "oppScore": 26,
-        "minutesRemaining": 28.833333333333336,
+        "minutesRemaining": 25.96666666666667,
         "moneyline": null,
         "opponent": "Illinois",
-        "espnWinProb": 0.013000000000000012
+        "espnWinProb": 0.028000000000000025
       }
     },
     "Saint Mary's": {
@@ -363,24 +363,24 @@
       "status": "active",
       "gamesPlayed": 0,
       "liveGame": {
-        "teamScore": 2,
-        "oppScore": 0,
-        "minutesRemaining": 38.16666666666667,
+        "teamScore": 7,
+        "oppScore": 10,
+        "minutesRemaining": 35.38333333333333,
         "moneyline": null,
         "opponent": "Idaho",
-        "espnWinProb": 0.984
+        "espnWinProb": 0.969
       }
     },
     "Idaho": {
       "status": "active",
       "gamesPlayed": 0,
       "liveGame": {
-        "teamScore": 0,
-        "oppScore": 2,
-        "minutesRemaining": 38.16666666666667,
+        "teamScore": 10,
+        "oppScore": 7,
+        "minutesRemaining": 35.38333333333333,
         "moneyline": null,
         "opponent": "Houston",
-        "espnWinProb": 0.016000000000000014
+        "espnWinProb": 0.031000000000000028
       }
     }
   },
@@ -467,7 +467,7 @@
     },
     "Kingston Flemings": {
       "completedPts": [],
-      "livePts": 0
+      "livePts": 2
     },
     "Milan Momcilovic": {
       "completedPts": [],
@@ -513,7 +513,7 @@
     },
     "Milos Uzan": {
       "completedPts": [],
-      "livePts": 0
+      "livePts": 3
     },
     "Jaxon Kohler": {
       "completedPts": [
@@ -555,7 +555,7 @@
     },
     "Morez Johnson Jr.": {
       "completedPts": [
-        14
+        21
       ],
       "livePts": 0
     },
@@ -676,7 +676,7 @@
       "newPpg": 10.3
     }
   },
-  "lastUpdated": "2026-03-20T02:18:31.625Z",
+  "lastUpdated": "2026-03-20T02:22:37.810Z",
   "_finalizedGameIds": [
     "401856489_Nebraska",
     "401856489_Troy",
