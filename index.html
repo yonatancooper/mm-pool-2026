@@ -957,6 +957,12 @@ async function fetchESPNScores() {
           if (hasOurTeam(teamName)) liveGameIds.push(game.id);
 
         } else if (isFinal) {
+          // ALWAYS clear liveGame when we see a final — even if already finalized
+          if (ts.liveGame) {
+            console.log(`[MM Pool] Clearing liveGame for ${teamName} (game final)`);
+            ts.liveGame = null;
+          }
+
           const alreadyFinalized = state._finalizedGameIds.includes(game.id + "_" + teamName);
 
           if (!alreadyFinalized) {
@@ -969,7 +975,6 @@ async function fetchESPNScores() {
                 ts.status = "eliminated";
               }
             }
-            ts.liveGame = null;
 
             state._finalizedGameIds.push(game.id + "_" + teamName);
 
