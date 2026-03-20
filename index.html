@@ -413,12 +413,10 @@ async function fetchSharedState(){
   try{
     document.getElementById("syncStatus").textContent="Syncing...";
     let remote=null;
-    // PRIMARY: Pull from Worker KV
     try{
       const r=await fetch(`${WORKER_URL}/state`,{signal:AbortSignal.timeout(5000)});
       if(r.ok){remote=await r.json();console.log("[MM Pool] Sync: Got state from Worker KV");}
     }catch(e){console.warn("[MM Pool] Worker KV failed:",e.message);}
-    // FALLBACK: Pull from GitHub raw
     if(!remote){
       try{
         const r=await fetch(RAW_URL+"?t="+Date.now(),{signal:AbortSignal.timeout(5000)});
@@ -426,17 +424,20 @@ async function fetchSharedState(){
       }catch(e){console.warn("[MM Pool] GitHub fallback failed:",e.message);}
     }
     if(remote&&remote.version===2&&remote.lastUpdated){
-      const hasLocal=localStateHasSubstance();
-      const rt=new Date(remote.lastUpdated).getTime();
-      const lt=state.lastUpdated?new Date(state.lastUpdated).getTime():0;
-      if(!hasLocal){
-        console.log("[MM Pool] Sync: Local is empty, taking remote");
-        state=ensure(remote);saveState();render();showToast("Synced with latest data");
-      }else if(rt>lt){
-        console.log("[MM Pool] Sync: Remote is newer, updating");
-        state=ensure(remote);saveState();render();showToast("Synced with latest data");
+      if(!IS_ADMIN){
+        // VIEWER: Always take remote unconditionally — KV is the single source of truth
+        console.log("[MM Pool] Sync: Viewer taking remote state unconditionally");
+        state=ensure(remote);localStorage.setItem("mm2026_v2",JSON.stringify(state));render();
       }else{
-        console.log("[MM Pool] Sync: Local is up to date");
+        // ADMIN: Use timestamp comparison (admin is the authority, only take if remote is actually newer)
+        const rt=new Date(remote.lastUpdated).getTime();
+        const lt=state.lastUpdated?new Date(state.lastUpdated).getTime():0;
+        if(rt>lt){
+          console.log("[MM Pool] Sync: Admin taking newer remote");
+          state=ensure(remote);saveState();render();
+        }else{
+          console.log("[MM Pool] Sync: Admin local is authoritative");
+        }
       }
     }
     document.getElementById("syncStatus").textContent=(IS_ADMIN?"👑 Admin · ":"")+"Synced "+new Date().toLocaleTimeString();
@@ -735,104 +736,80 @@ function saveAdmin(){
 }
 
 // === INIT ===
-// Apply known swaps
-if (!state.playerSwaps["Patrick Ngongba"]) {
-  state.playerSwaps["Patrick Ngongba"] = {newName:"Oscar Cluff", newTeam:"Purdue", newPpg:10.3};
-}
+// Admin-only: apply swaps, verified scores, sanitization
+if(IS_ADMIN){
+  // Apply known swaps
+  if (!state.playerSwaps["Patrick Ngongba"]) {
+    state.playerSwaps["Patrick Ngongba"] = {newName:"Oscar Cluff", newTeam:"Purdue", newPpg:10.3};
+  }
 
-// Sanitize state using verified box score data
-(function sanitize(){
   // Verified scores from official box scores (updated after each game day)
-  const VERIFIED={
-    // Ohio State 64, TCU 66 — Ohio State ELIMINATED
-    "Bruce Thornton":{completedPts:[10],team:"Ohio State",status:"eliminated",gp:0},
-    // Duke 71, Siena 65 — Duke WON
-    "Cameron Boozer":{completedPts:[22],team:"Duke",gp:1},
-    "Cayden Boozer":{completedPts:[19],team:"Duke",gp:1},
-    "Isaiah Evans":{completedPts:[16],team:"Duke",gp:1},
-    // Vanderbilt 78, McNeese 68 — Vanderbilt WON
-    "Tyler Tanner":{completedPts:[26],team:"Vanderbilt",gp:1},
-    "Duke Miles":{completedPts:[13],team:"Vanderbilt",gp:1},
-    // Arkansas 97, Hawaii 78 — Arkansas WON
-    "Darius Acuff Jr.":{completedPts:[24],team:"Arkansas",gp:1},
-    "Meleek Thomas":{completedPts:[21],team:"Arkansas",gp:1},
-    // Nebraska 76, Troy 47 — Nebraska WON
-    "Pryce Sandfort":{completedPts:[23],team:"Nebraska",gp:1},
-    // Wisconsin 82, High Point 83 — Wisconsin ELIMINATED
-    "John Blackwell":{completedPts:[22],team:"Wisconsin",status:"eliminated",gp:0},
-    "Nick Boyd":{completedPts:[27],team:"Wisconsin",status:"eliminated",gp:0},
-    // Michigan 101, Howard 80 — Michigan WON
-    "Morez Johnson Jr.":{completedPts:[21],team:"Michigan",gp:1},
-    "Aday Mara":{completedPts:[19],team:"Michigan",gp:1},
-    "Elliot Cadeau":{completedPts:[5],team:"Michigan",gp:1},
-    "Yaxel Lendeborg":{completedPts:[9],team:"Michigan",gp:1},
-    // Michigan State 92, NDSU 67 — Michigan State WON
-    "Jaxon Kohler":{completedPts:[12],team:"Michigan State",gp:1},
-    "Jeremy Fears Jr.":{completedPts:[7],team:"Michigan State",gp:1},
-    "Coen Carr":{completedPts:[17],team:"Michigan State",gp:1},
-  };
-
-  let fixed=false;
-  // Apply verified scores
-  for(const[name,v] of Object.entries(VERIFIED)){
-    const ps=state.players[name];
-    if(!ps)continue;
-    const curTotal=(ps.completedPts||[]).reduce((a,b)=>a+b,0)+(ps.livePts||0);
-    const verTotal=v.completedPts.reduce((a,b)=>a+b,0);
-    if(curTotal!==verTotal||ps.livePts>0){
-      console.log(`[MM Pool] Verified fix: ${name} was ${curTotal} → ${verTotal}`);
-      ps.completedPts=v.completedPts;
-      ps.livePts=0;
-      fixed=true;
+  (function sanitize(){
+    const VERIFIED={
+      "Bruce Thornton":{completedPts:[10],team:"Ohio State",status:"eliminated",gp:0},
+      "Cameron Boozer":{completedPts:[22],team:"Duke",gp:1},
+      "Cayden Boozer":{completedPts:[19],team:"Duke",gp:1},
+      "Isaiah Evans":{completedPts:[16],team:"Duke",gp:1},
+      "Tyler Tanner":{completedPts:[26],team:"Vanderbilt",gp:1},
+      "Duke Miles":{completedPts:[13],team:"Vanderbilt",gp:1},
+      "Darius Acuff Jr.":{completedPts:[24],team:"Arkansas",gp:1},
+      "Meleek Thomas":{completedPts:[21],team:"Arkansas",gp:1},
+      "Pryce Sandfort":{completedPts:[23],team:"Nebraska",gp:1},
+      "John Blackwell":{completedPts:[22],team:"Wisconsin",status:"eliminated",gp:0},
+      "Nick Boyd":{completedPts:[27],team:"Wisconsin",status:"eliminated",gp:0},
+      "Morez Johnson Jr.":{completedPts:[21],team:"Michigan",gp:1},
+      "Aday Mara":{completedPts:[19],team:"Michigan",gp:1},
+      "Elliot Cadeau":{completedPts:[5],team:"Michigan",gp:1},
+      "Yaxel Lendeborg":{completedPts:[9],team:"Michigan",gp:1},
+      "Jaxon Kohler":{completedPts:[12],team:"Michigan State",gp:1},
+      "Jeremy Fears Jr.":{completedPts:[7],team:"Michigan State",gp:1},
+      "Coen Carr":{completedPts:[17],team:"Michigan State",gp:1},
+    };
+    let fixed=false;
+    for(const[name,v] of Object.entries(VERIFIED)){
+      const ps=state.players[name];
+      if(!ps)continue;
+      const curTotal=(ps.completedPts||[]).reduce((a,b)=>a+b,0)+(ps.livePts||0);
+      const verTotal=v.completedPts.reduce((a,b)=>a+b,0);
+      if(curTotal!==verTotal||ps.livePts>0){
+        console.log(`[MM Pool] Verified fix: ${name} was ${curTotal} → ${verTotal}`);
+        ps.completedPts=v.completedPts;ps.livePts=0;fixed=true;
+      }
+      const ts=state.teams[v.team];
+      if(ts){
+        if(v.status==="eliminated"&&ts.status!=="eliminated"){ts.status="eliminated";ts.liveGame=null;fixed=true;}
+        if(v.gp!=null&&v.gp>0){ts.gamesPlayed=Math.max(ts.gamesPlayed||0,v.gp);fixed=true;}
+      }
     }
-    // Fix team state
-    const ts=state.teams[v.team];
-    if(ts){
-      if(v.status==="eliminated"&&ts.status!=="eliminated"){ts.status="eliminated";ts.liveGame=null;fixed=true;}
-      if(v.gp!=null&&v.gp>0){ts.gamesPlayed=Math.max(ts.gamesPlayed||0,v.gp);fixed=true;}
+    for(const p of PLAYERS_DEFAULT){
+      const ps=state.players[p.name];if(!ps)continue;
+      const sw=state.playerSwaps[p.name];const teamName=sw?sw.newTeam:p.team;
+      const ts=state.teams[teamName];if(!ts)continue;const gp=ts.gamesPlayed||0;
+      if(gp===0&&ts.status!=="eliminated"&&(ps.completedPts||[]).length>0){ps.completedPts=[];ps.livePts=0;fixed=true;}
+      if(gp>0&&(ps.completedPts||[]).length>gp){ps.completedPts=ps.completedPts.slice(ps.completedPts.length-gp);fixed=true;}
+      if(ps.livePts>0&&!ts.liveGame){ps.livePts=0;fixed=true;}
     }
-  }
-
-  // General cleanup: any player whose team hasn't played should have zero scores
-  for(const p of PLAYERS_DEFAULT){
-    const ps=state.players[p.name];
-    if(!ps)continue;
-    const sw=state.playerSwaps[p.name];
-    const teamName=sw?sw.newTeam:p.team;
-    const ts=state.teams[teamName];
-    if(!ts)continue;
-    const gp=ts.gamesPlayed||0;
-    // Fix slice(-0) bug: if gp=0, completedPts must be empty
-    if(gp===0&&ts.status!=="eliminated"&&(ps.completedPts||[]).length>0){
-      console.log(`[MM Pool] Sanitize: ${p.name} team ${teamName} has 0 gamesPlayed, clearing completedPts`);
-      ps.completedPts=[];ps.livePts=0;fixed=true;
-    }
-    // Trim if too many entries
-    if(gp>0&&(ps.completedPts||[]).length>gp){
-      ps.completedPts=ps.completedPts.slice(ps.completedPts.length-gp);
-      fixed=true;
-    }
-    // Clear stale livePts if team not in live game
-    if(ps.livePts>0&&!ts.liveGame){ps.livePts=0;fixed=true;}
-  }
-  if(fixed)saveState();
-})();
+    if(fixed)saveState();
+  })();
+} // end admin-only init
 
 render();
 
-// Init: sync from Worker/GitHub FIRST, then start ESPN
+// Init: sync then start appropriate mode
 (async function init(){
-  if(IS_ADMIN)console.log("[MM Pool] Running as ADMIN — state will auto-push to Worker KV");
-  else console.log("[MM Pool] Running as viewer — pulling shared state from Worker KV");
-  await fetchSharedState();
-  // Start ESPN auto-fetch (admin gets live data, viewers benefit from admin's pushes)
-  setTimeout(startAutoFetch, 1000);
-  // If admin, push current state immediately (in case KV is empty)
-  if(IS_ADMIN) pushStateToWorker(true);
-  // If admin, run initial reconciliation after 10 seconds
-  if(IS_ADMIN) setTimeout(()=>{ _lastReconcile=0; reconcileScores(); }, 10000);
-  // Re-sync periodically: admin every 2min (backup), viewers every 60s (get admin's updates fast)
-  setInterval(fetchSharedState, IS_ADMIN ? 5*60*1000 : 2*60*1000);
+  if(IS_ADMIN){
+    console.log("[MM Pool] Running as ADMIN — ESPN + reconciliation + push to KV");
+    await fetchSharedState();
+    setTimeout(startAutoFetch, 1000);
+    pushStateToWorker(true);
+    setTimeout(()=>{ _lastReconcile=0; reconcileScores(); }, 10000);
+    setInterval(fetchSharedState, 5*60*1000);
+  }else{
+    console.log("[MM Pool] Running as VIEWER — read-only from KV");
+    await fetchSharedState();
+    // Viewers ONLY sync from KV. No ESPN, no reconciliation, no local state mutation.
+    setInterval(fetchSharedState, 2*60*1000);
+  }
 })();
 
 // ============================================================
@@ -968,6 +945,86 @@ function getMinutesRemaining(status) {
 
 let espnAutoInterval = null;
 let lastESPNFetch = null;
+
+// ============================================================
+// HOURLY RECONCILIATION — verifies all finished games against ESPN box scores
+// ============================================================
+let _lastReconcile = 0;
+const RECONCILE_INTERVAL = 60 * 60 * 1000; // 1 hour
+
+async function reconcileScores() {
+  if (!IS_ADMIN) return;
+  const now = Date.now();
+  if (now - _lastReconcile < RECONCILE_INTERVAL) return;
+  _lastReconcile = now;
+  console.log("[MM Pool] Reconciliation starting...");
+  try {
+    const resp = await fetch(`${WORKER_URL}/scoreboard`, {signal: AbortSignal.timeout(10000)});
+    if (!resp.ok) { console.warn("[MM Pool] Reconcile: scoreboard fetch failed"); return; }
+    const data = await resp.json();
+    if (!data.games) return;
+    const ourTeams = new Set();
+    for (const p of PLAYERS_DEFAULT) {
+      const sw = state.playerSwaps[p.name];
+      ourTeams.add(sw ? sw.newTeam : p.team);
+    }
+    let fixes = 0;
+    for (const game of data.games) {
+      const isFinal = game.status.type === "STATUS_FINAL" || game.status.completed;
+      if (!isFinal) continue;
+      const homeName = resolveESPNTeam(game.home.name, game.home.abbrev);
+      const awayName = resolveESPNTeam(game.away.name, game.away.abbrev);
+      const hasOur = (homeName && ourTeams.has(homeName)) || (awayName && ourTeams.has(awayName));
+      if (!hasOur) continue;
+      try {
+        const bResp = await fetch(`${WORKER_URL}/boxscore?gameId=${game.id}`, {signal: AbortSignal.timeout(10000)});
+        if (!bResp.ok) continue;
+        const bData = await bResp.json();
+        const truthMap = {};
+        for (const ps of (bData.players || [])) {
+          const teamName = resolveESPNTeam(ps.team, ps.abbrev);
+          if (!teamName) continue;
+          const ourKey = matchPlayer(ps.name, teamName);
+          if (ourKey) truthMap[ourKey] = {pts: ps.pts, team: teamName};
+        }
+        for (const [teamName, isHome] of [[homeName, true], [awayName, false]]) {
+          if (!teamName || !state.teams[teamName]) continue;
+          const ts = state.teams[teamName];
+          const teamScore = isHome ? game.home.score : game.away.score;
+          const oppScore = isHome ? game.away.score : game.home.score;
+          const won = teamScore > oppScore;
+          if (!won && ts.status !== "eliminated") {
+            console.log(`[MM Pool] Reconcile fix: ${teamName} should be eliminated`);
+            ts.status = "eliminated"; ts.liveGame = null; fixes++;
+          }
+          if (won && ts.liveGame) { ts.liveGame = null; fixes++; }
+        }
+        for (const [playerKey, truth] of Object.entries(truthMap)) {
+          const ps = state.players[playerKey];
+          if (!ps) continue;
+          const ts = state.teams[truth.team];
+          const gp = ts ? ts.gamesPlayed || 0 : 0;
+          const completed = ps.completedPts || [];
+          const teamPlayed = gp > 0 || ts?.status === "eliminated";
+          if (teamPlayed && completed.length === 0) {
+            console.log(`[MM Pool] Reconcile fix: ${playerKey} missing pts, adding ${truth.pts}`);
+            ps.completedPts = [truth.pts]; ps.livePts = 0; fixes++;
+          } else if (teamPlayed && completed.length === 1 && completed[0] !== truth.pts && gp <= 1) {
+            console.log(`[MM Pool] Reconcile fix: ${playerKey} had ${completed[0]}, should be ${truth.pts}`);
+            ps.completedPts = [truth.pts]; ps.livePts = 0; fixes++;
+          }
+          if (ps.livePts > 0 && !ts?.liveGame) { ps.livePts = 0; fixes++; }
+        }
+      } catch(e) { console.warn(`[MM Pool] Reconcile: box score ${game.id} failed:`, e.message); }
+    }
+    if (fixes > 0) {
+      console.log(`[MM Pool] Reconciliation: ${fixes} fixes applied`);
+      saveState(); pushStateToWorker(); render();
+    } else {
+      console.log("[MM Pool] Reconciliation: all scores verified");
+    }
+  } catch(e) { console.warn("[MM Pool] Reconciliation failed:", e.message); }
+}
 
 async function fetchESPNScores() {
   try {
@@ -1215,128 +1272,9 @@ async function fetchESPNScores() {
   }
 }
 
+
+
 function updateLiveIndicator(hasLive, connected) {
-
-// ============================================================
-// HOURLY RECONCILIATION — verifies all finished games against ESPN box scores
-// ============================================================
-let _lastReconcile = 0;
-const RECONCILE_INTERVAL = 60 * 60 * 1000; // 1 hour
-
-async function reconcileScores() {
-  if (!IS_ADMIN) return;
-  const now = Date.now();
-  if (now - _lastReconcile < RECONCILE_INTERVAL) return;
-  _lastReconcile = now;
-
-  console.log("[MM Pool] ⚕️ Reconciliation starting — verifying all finished games...");
-
-  try {
-    // Fetch tournament scoreboard
-    const resp = await fetch(`${WORKER_URL}/scoreboard`, {signal: AbortSignal.timeout(10000)});
-    if (!resp.ok) { console.warn("[MM Pool] Reconcile: scoreboard fetch failed"); return; }
-    const data = await resp.json();
-    if (!data.games) return;
-
-    // Find all final games involving our teams
-    const ourTeams = new Set();
-    for (const p of PLAYERS_DEFAULT) {
-      const sw = state.playerSwaps[p.name];
-      ourTeams.add(sw ? sw.newTeam : p.team);
-    }
-
-    let fixes = 0;
-    for (const game of data.games) {
-      const isFinal = game.status.type === "STATUS_FINAL" || game.status.completed;
-      if (!isFinal) continue;
-
-      const homeName = resolveESPNTeam(game.home.name, game.home.abbrev);
-      const awayName = resolveESPNTeam(game.away.name, game.away.abbrev);
-      const hasOur = (homeName && ourTeams.has(homeName)) || (awayName && ourTeams.has(awayName));
-      if (!hasOur) continue;
-
-      // Fetch box score for this final game
-      try {
-        const bResp = await fetch(`${WORKER_URL}/boxscore?gameId=${game.id}`, {signal: AbortSignal.timeout(10000)});
-        if (!bResp.ok) continue;
-        const bData = await bResp.json();
-
-        // Build truth map: playerKey → verified points
-        const truthMap = {};
-        for (const ps of (bData.players || [])) {
-          const teamName = resolveESPNTeam(ps.team, ps.abbrev);
-          if (!teamName) continue;
-          const ourKey = matchPlayer(ps.name, teamName);
-          if (ourKey) truthMap[ourKey] = {pts: ps.pts, team: teamName};
-        }
-
-        // Verify team status
-        for (const [teamName, isHome] of [[homeName, true], [awayName, false]]) {
-          if (!teamName || !state.teams[teamName]) continue;
-          const ts = state.teams[teamName];
-          const teamScore = isHome ? game.home.score : game.away.score;
-          const oppScore = isHome ? game.away.score : game.home.score;
-          const won = teamScore > oppScore;
-
-          if (!won && ts.status !== "eliminated") {
-            console.log(`[MM Pool] ⚕️ Fix: ${teamName} should be eliminated (lost ${teamScore}-${oppScore})`);
-            ts.status = "eliminated"; ts.liveGame = null; fixes++;
-          }
-          if (won && ts.liveGame) {
-            console.log(`[MM Pool] ⚕️ Fix: ${teamName} clearing stale liveGame`);
-            ts.liveGame = null; fixes++;
-          }
-        }
-
-        // Verify player scores
-        for (const [playerKey, truth] of Object.entries(truthMap)) {
-          const ps = state.players[playerKey];
-          if (!ps) continue;
-          const ts = state.teams[truth.team];
-          const gp = ts ? ts.gamesPlayed || 0 : 0;
-          const completed = ps.completedPts || [];
-          const totalInState = completed.reduce((a,b) => a+b, 0) + (ps.livePts || 0);
-
-          // Check if this game's points are accounted for
-          // For a team with gp games won or eliminated, the player should have at least 1 entry in completedPts
-          const teamPlayed = gp > 0 || ts?.status === "eliminated";
-          if (teamPlayed && completed.length === 0) {
-            // Points missing entirely — add them
-            console.log(`[MM Pool] ⚕️ Fix: ${playerKey} missing completedPts, adding ${truth.pts}`);
-            ps.completedPts = [truth.pts];
-            ps.livePts = 0;
-            fixes++;
-          } else if (teamPlayed && completed.length === 1 && completed[0] !== truth.pts && gp <= 1) {
-            // Single game played but wrong score
-            console.log(`[MM Pool] ⚕️ Fix: ${playerKey} had ${completed[0]}, should be ${truth.pts}`);
-            ps.completedPts = [truth.pts];
-            ps.livePts = 0;
-            fixes++;
-          }
-          // Clear stale livePts
-          if (ps.livePts > 0 && !ts?.liveGame) {
-            console.log(`[MM Pool] ⚕️ Fix: ${playerKey} clearing stale livePts ${ps.livePts}`);
-            ps.livePts = 0;
-            fixes++;
-          }
-        }
-      } catch(e) {
-        console.warn(`[MM Pool] Reconcile: box score ${game.id} failed:`, e.message);
-      }
-    }
-
-    if (fixes > 0) {
-      console.log(`[MM Pool] ⚕️ Reconciliation complete: ${fixes} fixes applied`);
-      saveState();
-      pushStateToWorker(true); // Force push corrections
-      render();
-    } else {
-      console.log("[MM Pool] ⚕️ Reconciliation complete: all scores verified ✓");
-    }
-  } catch(e) {
-    console.warn("[MM Pool] Reconciliation failed:", e.message);
-  }
-}
   const el = document.getElementById("liveIndicator");
   if (!el) return;
   if (hasLive && connected) {
@@ -1358,22 +1296,18 @@ async function manualESPNRefresh() {
   showToast("Fetching live scores...");
   const ok = await fetchESPNScores();
   if (ok) showToast("Live scores updated!");
-  else showToast("ESPN fetch failed — using manual data");
+  else showToast("ESPN fetch failed");
 }
 
 function startAutoFetch() {
   console.log("[MM Pool] Starting ESPN auto-fetch");
-  // Start immediately — no health check gate
   fetchESPNScores();
-  // Auto-refresh every 45 seconds
   espnAutoInterval = setInterval(fetchESPNScores, 45000);
 }
 
-// Also update getLiveWinP to use ESPN win prob as fallback
 const _origGetLiveWinP = getLiveWinP;
 getLiveWinP = function(lg) {
   if (!lg) return null;
-  // Priority: manual moneyline > ESPN win prob > score-based model
   if (lg.moneyline != null && lg.moneyline !== 0) {
     const p = ml2prob(lg.moneyline);
     if (p != null) return p;
@@ -1382,6 +1316,7 @@ getLiveWinP = function(lg) {
   const margin = (lg.teamScore || 0) - (lg.oppScore || 0);
   return marginWinP(margin, lg.minutesRemaining != null ? lg.minutesRemaining : 20);
 };
+
 </script>
 </body>
 </html>
