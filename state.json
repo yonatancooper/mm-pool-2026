@@ -1,0 +1,705 @@
+{
+  "version": 2,
+  "teams": {
+    "Duke": {
+      "status": "active",
+      "gamesPlayed": 1,
+      "liveGame": null
+    },
+    "Siena": {
+      "status": "eliminated",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Ohio State": {
+      "status": "eliminated",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "TCU": {
+      "status": "active",
+      "gamesPlayed": 1,
+      "liveGame": null
+    },
+    "St. John's": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Northern Iowa": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Kansas": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Cal. Baptist": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Louisville": {
+      "status": "active",
+      "gamesPlayed": 1,
+      "liveGame": null
+    },
+    "South Florida": {
+      "status": "eliminated",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Michigan State": {
+      "status": "active",
+      "gamesPlayed": 1,
+      "liveGame": null
+    },
+    "North Dakota State": {
+      "status": "eliminated",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "UCLA": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "UCF": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Connecticut": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Furman": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Michigan": {
+      "status": "active",
+      "gamesPlayed": 1,
+      "liveGame": null
+    },
+    "UMBC": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Howard": {
+      "status": "eliminated",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Georgia": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": {
+        "teamScore": 2,
+        "oppScore": 8,
+        "minutesRemaining": 35.45,
+        "moneyline": null,
+        "opponent": "Saint Louis",
+        "espnWinProb": 0.351
+      }
+    },
+    "Saint Louis": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": {
+        "teamScore": 8,
+        "oppScore": 2,
+        "minutesRemaining": 35.45,
+        "moneyline": null,
+        "opponent": "Georgia",
+        "espnWinProb": 0.649
+      }
+    },
+    "Texas Tech": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Akron": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Alabama": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Hofstra": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Tennessee": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Miami (OH)": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "SMU": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Virginia": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Wright State": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Kentucky": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Santa Clara": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Iowa State": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Tennessee State": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Arizona": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "LIU": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Villanova": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Utah State": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Wisconsin": {
+      "status": "eliminated",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "High Point": {
+      "status": "active",
+      "gamesPlayed": 1,
+      "liveGame": null
+    },
+    "Arkansas": {
+      "status": "active",
+      "gamesPlayed": 1,
+      "liveGame": null
+    },
+    "Hawaii": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "BYU": {
+      "status": "eliminated",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Texas": {
+      "status": "active",
+      "gamesPlayed": 1,
+      "liveGame": null
+    },
+    "NC State": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Gonzaga": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Kennesaw State": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Miami (Fla.)": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Missouri": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Purdue": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Queens": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Florida": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Prairie View": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Lehigh": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Clemson": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Iowa": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Vanderbilt": {
+      "status": "active",
+      "gamesPlayed": 1,
+      "liveGame": null
+    },
+    "McNeese": {
+      "status": "eliminated",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Nebraska": {
+      "status": "active",
+      "gamesPlayed": 1,
+      "liveGame": null
+    },
+    "Troy": {
+      "status": "eliminated",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "North Carolina": {
+      "status": "eliminated",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "VCU": {
+      "status": "active",
+      "gamesPlayed": 1,
+      "liveGame": null
+    },
+    "Illinois": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": {
+        "teamScore": 26,
+        "oppScore": 17,
+        "minutesRemaining": 28.833333333333336,
+        "moneyline": null,
+        "opponent": "Penn",
+        "espnWinProb": 0.987
+      }
+    },
+    "Penn": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": {
+        "teamScore": 17,
+        "oppScore": 26,
+        "minutesRemaining": 28.833333333333336,
+        "moneyline": null,
+        "opponent": "Illinois",
+        "espnWinProb": 0.013000000000000012
+      }
+    },
+    "Saint Mary's": {
+      "status": "eliminated",
+      "gamesPlayed": 0,
+      "liveGame": null
+    },
+    "Texas A&M": {
+      "status": "active",
+      "gamesPlayed": 1,
+      "liveGame": null
+    },
+    "Houston": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": {
+        "teamScore": 2,
+        "oppScore": 0,
+        "minutesRemaining": 38.16666666666667,
+        "moneyline": null,
+        "opponent": "Idaho",
+        "espnWinProb": 0.984
+      }
+    },
+    "Idaho": {
+      "status": "active",
+      "gamesPlayed": 0,
+      "liveGame": {
+        "teamScore": 0,
+        "oppScore": 2,
+        "minutesRemaining": 38.16666666666667,
+        "moneyline": null,
+        "opponent": "Houston",
+        "espnWinProb": 0.016000000000000014
+      }
+    }
+  },
+  "players": {
+    "Yaxel Lendeborg": {
+      "completedPts": [
+        9
+      ],
+      "livePts": 0
+    },
+    "Alex Condon": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Elliot Cadeau": {
+      "completedPts": [
+        5
+      ],
+      "livePts": 0
+    },
+    "David Mirkovic": {
+      "completedPts": [],
+      "livePts": 9
+    },
+    "Kylan Boswell": {
+      "completedPts": [],
+      "livePts": 5
+    },
+    "Trey Kaufman-Renn": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Thomas Haugh": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Aday Mara": {
+      "completedPts": [
+        19
+      ],
+      "livePts": 0
+    },
+    "Braden Smith": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Malik Thomas": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Alex Karaban": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "John Blackwell": {
+      "completedPts": [
+        22
+      ],
+      "livePts": 0
+    },
+    "Graham Ike": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Labaron Philon": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Xaivian Lee": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Darryn Peterson": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Joseph Tugler": {
+      "completedPts": [],
+      "livePts": 2
+    },
+    "Christian Anderson": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Kingston Flemings": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Milan Momcilovic": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Tarris Reed Jr.": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Ja'Kobi Gillespie": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Tyon Grant-Foster": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Nick Boyd": {
+      "completedPts": [
+        27
+      ],
+      "livePts": 0
+    },
+    "Jaden Bradley": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Joshua Jefferson": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Coen Carr": {
+      "completedPts": [
+        17
+      ],
+      "livePts": 0
+    },
+    "Cayden Boozer": {
+      "completedPts": [
+        19
+      ],
+      "livePts": 0
+    },
+    "Milos Uzan": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Jaxon Kohler": {
+      "completedPts": [
+        12
+      ],
+      "livePts": 0
+    },
+    "Koa Peat": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Patrick Ngongba": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Jeremy Fears Jr.": {
+      "completedPts": [
+        7
+      ],
+      "livePts": 0
+    },
+    "Ivan Kharchenkov": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Tamin Lipsey": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Anthony Dell'Orso": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Isaiah Evans": {
+      "completedPts": [
+        16
+      ],
+      "livePts": 0
+    },
+    "Morez Johnson Jr.": {
+      "completedPts": [
+        14
+      ],
+      "livePts": 0
+    },
+    "Motiejus Krivas": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Fletcher Loyer": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Duke Miles": {
+      "completedPts": [
+        13
+      ],
+      "livePts": 0
+    },
+    "Rueben Chinyelu": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Brayden Burries": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Emanuel Sharp": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "AJ Dybantsa": {
+      "completedPts": [
+        35
+      ],
+      "livePts": 0
+    },
+    "Zuby Ejiofor": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Meleek Thomas": {
+      "completedPts": [
+        21
+      ],
+      "livePts": 0
+    },
+    "Robert Wright III": {
+      "completedPts": [
+        14
+      ],
+      "livePts": 0
+    },
+    "Cameron Boozer": {
+      "completedPts": [
+        22
+      ],
+      "livePts": 0
+    },
+    "Tyler Tanner": {
+      "completedPts": [
+        26
+      ],
+      "livePts": 0
+    },
+    "Boogie Fland": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Bruce Thornton": {
+      "completedPts": [
+        10
+      ],
+      "livePts": 0
+    },
+    "Tavari Johnson": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Henri Veesaar": {
+      "completedPts": [
+        26
+      ],
+      "livePts": 0
+    },
+    "Darius Acuff Jr.": {
+      "completedPts": [
+        24
+      ],
+      "livePts": 0
+    },
+    "Keaton Wagler": {
+      "completedPts": [],
+      "livePts": 5
+    },
+    "Solomon Ball": {
+      "completedPts": [],
+      "livePts": 0
+    },
+    "Andrej Stojakovic": {
+      "completedPts": [],
+      "livePts": 4
+    },
+    "Pryce Sandfort": {
+      "completedPts": [
+        23
+      ],
+      "livePts": 0
+    },
+    "Thijs De Ridder": {
+      "completedPts": [],
+      "livePts": 0
+    }
+  },
+  "probOverrides": {},
+  "playerSwaps": {
+    "Patrick Ngongba": {
+      "newName": "Oscar Cluff",
+      "newTeam": "Purdue",
+      "newPpg": 10.3
+    }
+  },
+  "lastUpdated": "2026-03-20T02:18:31.625Z",
+  "_finalizedGameIds": [
+    "401856489_Nebraska",
+    "401856489_Troy",
+    "401856480_Wisconsin",
+    "401856480_High Point",
+    "401856482_Louisville",
+    "401856482_South Florida",
+    "401856479_Ohio State",
+    "401856479_TCU",
+    "401856478_Duke",
+    "401856478_Siena",
+    "401856488_Vanderbilt",
+    "401856488_McNeese",
+    "401856481_Arkansas",
+    "401856483_Michigan State",
+    "401856483_North Dakota State",
+    "401856490_North Carolina",
+    "401856490_VCU",
+    "401856486_Michigan",
+    "401856486_Howard",
+    "401856492_Saint Mary's",
+    "401856492_Texas A&M",
+    "401856484_BYU",
+    "401856484_Texas"
+  ]
+}
