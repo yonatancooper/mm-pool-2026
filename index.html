@@ -446,8 +446,36 @@ async function fetchSharedState(){
   }
 }
 
-async function pushStateToWorker(){
+let _lastPushedHash = "";
+let _lastPushTime = 0;
+const MIN_PUSH_INTERVAL = 3 * 60 * 1000; // Push at most every 3 minutes
+
+function stateFingerprint(){
+  // Quick hash of the parts that matter: player scores, team statuses, live games
+  let s = "";
+  for(const p of PLAYERS_DEFAULT){
+    const ps = state.players[p.name];
+    if(ps) s += (ps.completedPts||[]).join(",") + "|" + (ps.livePts||0) + ";";
+  }
+  for(const t of Object.keys(state.teams)){
+    const ts = state.teams[t];
+    if(ts) s += ts.status + ts.gamesPlayed + (ts.liveGame ? ts.liveGame.teamScore + "-" + ts.liveGame.oppScore : "x") + ";";
+  }
+  return s;
+}
+
+async function pushStateToWorker(force){
   if(!IS_ADMIN)return;
+  const now = Date.now();
+  const hash = stateFingerprint();
+  // Skip if nothing changed AND not forced AND within throttle window
+  if(!force && hash === _lastPushedHash){
+    return; // No changes, skip push
+  }
+  if(!force && (now - _lastPushTime) < MIN_PUSH_INTERVAL){
+    console.log("[MM Pool] Push throttled (waiting for 3min interval)");
+    return;
+  }
   try{
     const r=await fetch(`${WORKER_URL}/state`,{
       method:"PUT",
@@ -455,7 +483,11 @@ async function pushStateToWorker(){
       body:JSON.stringify(state),
       signal:AbortSignal.timeout(5000),
     });
-    if(r.ok){console.log("[MM Pool] State pushed to Worker KV");}
+    if(r.ok){
+      _lastPushedHash = hash;
+      _lastPushTime = now;
+      console.log("[MM Pool] State pushed to Worker KV");
+    }
     else{const err=await r.json().catch(()=>({}));console.warn("[MM Pool] Push failed:",err.error||r.status);}
   }catch(e){console.warn("[MM Pool] Push failed:",e.message);}
 }
@@ -699,7 +731,7 @@ function saveAdmin(){
     if(nn&&nt&&!isNaN(np))state.playerSwaps[p.name]={newName:nn,newTeam:nt,newPpg:np};
     else delete state.playerSwaps[p.name];
   }
-  saveState();pushStateToWorker();render();showToast(IS_ADMIN?"Saved & synced to all users!":"Saved locally.");
+  saveState();pushStateToWorker(true);render();showToast(IS_ADMIN?"Saved & synced to all users!":"Saved locally.");
 }
 
 // === INIT ===
@@ -796,9 +828,9 @@ render();
   // Start ESPN auto-fetch (admin gets live data, viewers benefit from admin's pushes)
   setTimeout(startAutoFetch, 1000);
   // If admin, push current state immediately (in case KV is empty)
-  if(IS_ADMIN) pushStateToWorker();
+  if(IS_ADMIN) pushStateToWorker(true);
   // Re-sync periodically: admin every 2min (backup), viewers every 60s (get admin's updates fast)
-  setInterval(fetchSharedState, IS_ADMIN ? 2*60*1000 : 60*1000);
+  setInterval(fetchSharedState, IS_ADMIN ? 5*60*1000 : 2*60*1000);
 })();
 
 // ============================================================
