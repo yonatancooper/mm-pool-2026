@@ -651,8 +651,34 @@ function saveAdmin(){
 // Apply known swaps
 if (!state.playerSwaps["Patrick Ngongba"]) {
   state.playerSwaps["Patrick Ngongba"] = {newName:"Oscar Cluff", newTeam:"Purdue", newPpg:10.3};
-  saveState();
 }
+
+// Sanitize state: fix any double-counted completedPts and stale livePts
+(function sanitize(){
+  let fixed=false;
+  for(const p of PLAYERS_DEFAULT){
+    const sw=state.playerSwaps[p.name];
+    const teamName=sw?sw.newTeam:p.team;
+    const ts=state.teams[teamName];
+    const ps=state.players[p.name];
+    if(!ps||!ts)continue;
+    // Trim completedPts if more entries than team's gamesPlayed
+    const gp=ts.gamesPlayed||0;
+    if(Array.isArray(ps.completedPts)&&ps.completedPts.length>gp){
+      console.log(`[MM Pool] Sanitize: ${p.name} had ${ps.completedPts.length} completedPts but team has ${gp} gamesPlayed. Trimming to last ${gp}.`);
+      ps.completedPts=ps.completedPts.slice(-gp);
+      fixed=true;
+    }
+    // Clear livePts if team is not in a live game
+    if(ps.livePts>0&&(!ts.liveGame)){
+      console.log(`[MM Pool] Sanitize: ${p.name} had stale livePts=${ps.livePts}, clearing.`);
+      ps.livePts=0;
+      fixed=true;
+    }
+  }
+  if(fixed)saveState();
+})();
+
 render();fetchSharedState();
 
 // ============================================================
@@ -902,9 +928,15 @@ async function fetchESPNScores() {
           if (isFinalGame && finalizedTeams.has(teamName)) {
             // Game is FINAL: move points to completedPts, clear livePts
             if (!Array.isArray(playerState.completedPts)) playerState.completedPts = [];
-            playerState.completedPts.push(ps.pts);
+            // Guard: only push if player doesn't already have points for this round
+            const teamGP = state.teams[teamName]?.gamesPlayed || 0;
+            if (playerState.completedPts.length < teamGP) {
+              playerState.completedPts.push(ps.pts);
+              console.log(`[MM Pool] Final: ${ps.name} → ${ps.pts}pts → completedPts`);
+            } else {
+              console.log(`[MM Pool] Final: ${ps.name} already has ${playerState.completedPts.length} entries (gp=${teamGP}), skipping push`);
+            }
             playerState.livePts = 0;
-            console.log(`[MM Pool] Final: ${ps.name} → ${ps.pts}pts → completedPts`);
           } else if (!isFinalGame) {
             // Game is LIVE: update livePts
             playerState.livePts = ps.pts;
@@ -923,6 +955,23 @@ async function fetchESPNScores() {
     // Then fetch final box scores (one-time operation)
     for (const gid of finalUnique) {
       await fetchAndApplyBoxScore(gid, true);
+    }
+
+    // CLEANUP: Clear stale livePts for ALL players on finalized/eliminated teams
+    // This catches cases where a player had livePts from a previous cycle but
+    // wasn't matched in the box score (name mismatch, timeout, etc.)
+    for (const p of PLAYERS_DEFAULT) {
+      const sw = state.playerSwaps[p.name];
+      const teamName = sw ? sw.newTeam : p.team;
+      const ts = state.teams[teamName];
+      const ps = state.players[p.name];
+      if (ps && ts && (ts.status === "eliminated" || (!ts.liveGame && ps.livePts > 0))) {
+        // Team is not in a live game but player has livePts — stale data
+        if (!ts.liveGame && ps.livePts > 0) {
+          console.log(`[MM Pool] Clearing stale livePts for ${p.name}: ${ps.livePts} → 0`);
+          ps.livePts = 0;
+        }
+      }
     }
 
     // Trim _finalizedGameIds to prevent unbounded growth
