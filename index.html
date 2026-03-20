@@ -871,40 +871,60 @@ let lastESPNFetch = null;
 
 async function fetchESPNScores() {
   try {
-    const today = new Date();
-    const yesterday = new Date(today.getTime() - 24*60*60*1000);
-    const fmt = d => d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
-    const todayStr = fmt(today);
-    const yesterdayStr = fmt(yesterday);
-
-    // Fetch both today and yesterday to catch late-finishing games
     const allGames = [];
-    for (const dateStr of [todayStr, yesterdayStr]) {
-      try {
-        const resp = await fetch(`${WORKER_URL}/scoreboard?date=${dateStr}`, {
-          signal: AbortSignal.timeout(8000)
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data.games) {
-            console.log(`[MM Pool] Scoreboard ${dateStr}: ${data.games.length} games`);
-            allGames.push(...data.games);
-          }
+
+    // PRIMARY: Fetch tournament scoreboard WITHOUT date filter
+    // ESPN returns all active/recent tournament games with groups=100
+    try {
+      const resp = await fetch(`${WORKER_URL}/scoreboard`, {
+        signal: AbortSignal.timeout(8000)
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.games && data.games.length > 0) {
+          console.log(`[MM Pool] Tournament scoreboard: ${data.games.length} games`);
+          allGames.push(...data.games);
         }
-      } catch(e) { console.warn(`[MM Pool] Scoreboard ${dateStr} failed:`, e.message); }
+      }
+    } catch(e) { console.warn(`[MM Pool] Tournament scoreboard failed:`, e.message); }
+
+    // FALLBACK: If no games found, try explicit dates (today + yesterday)
+    if (allGames.length === 0) {
+      const today = new Date();
+      const yesterday = new Date(today.getTime() - 24*60*60*1000);
+      const fmt = d => d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+      for (const dateStr of [fmt(today), fmt(yesterday)]) {
+        try {
+          const resp = await fetch(`${WORKER_URL}/scoreboard?date=${dateStr}`, {
+            signal: AbortSignal.timeout(8000)
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data.games) {
+              console.log(`[MM Pool] Date ${dateStr}: ${data.games.length} games`);
+              allGames.push(...data.games);
+            }
+          }
+        } catch(e) { console.warn(`[MM Pool] Scoreboard ${dateStr} failed:`, e.message); }
+      }
     }
 
-    if (allGames.length === 0) throw new Error("No games from either day");
+    if (allGames.length === 0) {
+      console.warn("[MM Pool] No games found from any source");
+      updateLiveIndicator(false, true);
+      return true; // Worker is reachable, just no games
+    }
 
-    // Deduplicate by game id (same game might appear in both days' feeds)
+    // Deduplicate by game id
     const seen = new Set();
     const games = allGames.filter(g => { if (seen.has(g.id)) return false; seen.add(g.id); return true; });
+    console.log(`[MM Pool] Processing ${games.length} unique games`);
 
     let hasLive = false;
     const liveGameIds = [];
     const finalGameIds = [];
     const finalizedTeams = new Set();
-    const teamsSeenInGames = new Set(); // Track which teams appear in any game
+    const teamsSeenInGames = new Set();
 
     // Track which games we've already finalized to avoid double-counting
     if (!state._finalizedGameIds) state._finalizedGameIds = [];
