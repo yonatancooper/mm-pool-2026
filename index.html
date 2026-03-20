@@ -829,6 +829,8 @@ render();
   setTimeout(startAutoFetch, 1000);
   // If admin, push current state immediately (in case KV is empty)
   if(IS_ADMIN) pushStateToWorker(true);
+  // If admin, run initial reconciliation after 10 seconds
+  if(IS_ADMIN) setTimeout(()=>{ _lastReconcile=0; reconcileScores(); }, 10000);
   // Re-sync periodically: admin every 2min (backup), viewers every 60s (get admin's updates fast)
   setInterval(fetchSharedState, IS_ADMIN ? 5*60*1000 : 2*60*1000);
 })();
@@ -1201,6 +1203,7 @@ async function fetchESPNScores() {
     lastESPNFetch = new Date();
     saveState();
     pushStateToWorker(); // Auto-push to KV if admin
+    reconcileScores(); // Hourly verification (internally throttled)
     render();
     updateLiveIndicator(hasLive, true);
     return true;
@@ -1213,6 +1216,127 @@ async function fetchESPNScores() {
 }
 
 function updateLiveIndicator(hasLive, connected) {
+
+// ============================================================
+// HOURLY RECONCILIATION — verifies all finished games against ESPN box scores
+// ============================================================
+let _lastReconcile = 0;
+const RECONCILE_INTERVAL = 60 * 60 * 1000; // 1 hour
+
+async function reconcileScores() {
+  if (!IS_ADMIN) return;
+  const now = Date.now();
+  if (now - _lastReconcile < RECONCILE_INTERVAL) return;
+  _lastReconcile = now;
+
+  console.log("[MM Pool] ⚕️ Reconciliation starting — verifying all finished games...");
+
+  try {
+    // Fetch tournament scoreboard
+    const resp = await fetch(`${WORKER_URL}/scoreboard`, {signal: AbortSignal.timeout(10000)});
+    if (!resp.ok) { console.warn("[MM Pool] Reconcile: scoreboard fetch failed"); return; }
+    const data = await resp.json();
+    if (!data.games) return;
+
+    // Find all final games involving our teams
+    const ourTeams = new Set();
+    for (const p of PLAYERS_DEFAULT) {
+      const sw = state.playerSwaps[p.name];
+      ourTeams.add(sw ? sw.newTeam : p.team);
+    }
+
+    let fixes = 0;
+    for (const game of data.games) {
+      const isFinal = game.status.type === "STATUS_FINAL" || game.status.completed;
+      if (!isFinal) continue;
+
+      const homeName = resolveESPNTeam(game.home.name, game.home.abbrev);
+      const awayName = resolveESPNTeam(game.away.name, game.away.abbrev);
+      const hasOur = (homeName && ourTeams.has(homeName)) || (awayName && ourTeams.has(awayName));
+      if (!hasOur) continue;
+
+      // Fetch box score for this final game
+      try {
+        const bResp = await fetch(`${WORKER_URL}/boxscore?gameId=${game.id}`, {signal: AbortSignal.timeout(10000)});
+        if (!bResp.ok) continue;
+        const bData = await bResp.json();
+
+        // Build truth map: playerKey → verified points
+        const truthMap = {};
+        for (const ps of (bData.players || [])) {
+          const teamName = resolveESPNTeam(ps.team, ps.abbrev);
+          if (!teamName) continue;
+          const ourKey = matchPlayer(ps.name, teamName);
+          if (ourKey) truthMap[ourKey] = {pts: ps.pts, team: teamName};
+        }
+
+        // Verify team status
+        for (const [teamName, isHome] of [[homeName, true], [awayName, false]]) {
+          if (!teamName || !state.teams[teamName]) continue;
+          const ts = state.teams[teamName];
+          const teamScore = isHome ? game.home.score : game.away.score;
+          const oppScore = isHome ? game.away.score : game.home.score;
+          const won = teamScore > oppScore;
+
+          if (!won && ts.status !== "eliminated") {
+            console.log(`[MM Pool] ⚕️ Fix: ${teamName} should be eliminated (lost ${teamScore}-${oppScore})`);
+            ts.status = "eliminated"; ts.liveGame = null; fixes++;
+          }
+          if (won && ts.liveGame) {
+            console.log(`[MM Pool] ⚕️ Fix: ${teamName} clearing stale liveGame`);
+            ts.liveGame = null; fixes++;
+          }
+        }
+
+        // Verify player scores
+        for (const [playerKey, truth] of Object.entries(truthMap)) {
+          const ps = state.players[playerKey];
+          if (!ps) continue;
+          const ts = state.teams[truth.team];
+          const gp = ts ? ts.gamesPlayed || 0 : 0;
+          const completed = ps.completedPts || [];
+          const totalInState = completed.reduce((a,b) => a+b, 0) + (ps.livePts || 0);
+
+          // Check if this game's points are accounted for
+          // For a team with gp games won or eliminated, the player should have at least 1 entry in completedPts
+          const teamPlayed = gp > 0 || ts?.status === "eliminated";
+          if (teamPlayed && completed.length === 0) {
+            // Points missing entirely — add them
+            console.log(`[MM Pool] ⚕️ Fix: ${playerKey} missing completedPts, adding ${truth.pts}`);
+            ps.completedPts = [truth.pts];
+            ps.livePts = 0;
+            fixes++;
+          } else if (teamPlayed && completed.length === 1 && completed[0] !== truth.pts && gp <= 1) {
+            // Single game played but wrong score
+            console.log(`[MM Pool] ⚕️ Fix: ${playerKey} had ${completed[0]}, should be ${truth.pts}`);
+            ps.completedPts = [truth.pts];
+            ps.livePts = 0;
+            fixes++;
+          }
+          // Clear stale livePts
+          if (ps.livePts > 0 && !ts?.liveGame) {
+            console.log(`[MM Pool] ⚕️ Fix: ${playerKey} clearing stale livePts ${ps.livePts}`);
+            ps.livePts = 0;
+            fixes++;
+          }
+        }
+      } catch(e) {
+        console.warn(`[MM Pool] Reconcile: box score ${game.id} failed:`, e.message);
+      }
+    }
+
+    if (fixes > 0) {
+      console.log(`[MM Pool] ⚕️ Reconciliation complete: ${fixes} fixes applied`);
+      saveState();
+      pushStateToWorker(true); // Force push corrections
+      render();
+    } else {
+      console.log("[MM Pool] ⚕️ Reconciliation complete: all scores verified ✓");
+    }
+  } catch(e) {
+    console.warn("[MM Pool] Reconciliation failed:", e.message);
+  }
+}
   const el = document.getElementById("liveIndicator");
   if (!el) return;
   if (hasLive && connected) {
