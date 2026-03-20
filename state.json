@@ -97,28 +97,14 @@
       "liveGame": null
     },
     "Georgia": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
-      "liveGame": {
-        "teamScore": 7,
-        "oppScore": 10,
-        "minutesRemaining": 34.733333333333334,
-        "moneyline": null,
-        "opponent": "Saint Louis",
-        "espnWinProb": 0.437
-      }
+      "liveGame": null
     },
     "Saint Louis": {
       "status": "active",
-      "gamesPlayed": 0,
-      "liveGame": {
-        "teamScore": 10,
-        "oppScore": 7,
-        "minutesRemaining": 34.733333333333334,
-        "moneyline": null,
-        "opponent": "Georgia",
-        "espnWinProb": 0.563
-      }
+      "gamesPlayed": 1,
+      "liveGame": null
     },
     "Texas Tech": {
       "status": "active",
@@ -242,11 +228,11 @@
     },
     "Gonzaga": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Kennesaw State": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
@@ -327,27 +313,13 @@
     },
     "Illinois": {
       "status": "active",
-      "gamesPlayed": 0,
-      "liveGame": {
-        "teamScore": 26,
-        "oppScore": 22,
-        "minutesRemaining": 25.96666666666667,
-        "moneyline": null,
-        "opponent": "Penn",
-        "espnWinProb": 0.972
-      }
+      "gamesPlayed": 1,
+      "liveGame": null
     },
     "Penn": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
-      "liveGame": {
-        "teamScore": 22,
-        "oppScore": 26,
-        "minutesRemaining": 25.96666666666667,
-        "moneyline": null,
-        "opponent": "Illinois",
-        "espnWinProb": 0.028000000000000025
-      }
+      "liveGame": null
     },
     "Saint Mary's": {
       "status": "eliminated",
@@ -361,27 +333,13 @@
     },
     "Houston": {
       "status": "active",
-      "gamesPlayed": 0,
-      "liveGame": {
-        "teamScore": 7,
-        "oppScore": 10,
-        "minutesRemaining": 35.38333333333333,
-        "moneyline": null,
-        "opponent": "Idaho",
-        "espnWinProb": 0.969
-      }
+      "gamesPlayed": 1,
+      "liveGame": null
     },
     "Idaho": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
-      "liveGame": {
-        "teamScore": 10,
-        "oppScore": 7,
-        "minutesRemaining": 35.38333333333333,
-        "moneyline": null,
-        "opponent": "Houston",
-        "espnWinProb": 0.031000000000000028
-      }
+      "liveGame": null
     }
   },
   "players": {
@@ -402,12 +360,16 @@
       "livePts": 0
     },
     "David Mirkovic": {
-      "completedPts": [],
-      "livePts": 9
+      "completedPts": [
+        29
+      ],
+      "livePts": 0
     },
     "Kylan Boswell": {
-      "completedPts": [],
-      "livePts": 5
+      "completedPts": [
+        13
+      ],
+      "livePts": 0
     },
     "Trey Kaufman-Renn": {
       "completedPts": [],
@@ -442,7 +404,9 @@
       "livePts": 0
     },
     "Graham Ike": {
-      "completedPts": [],
+      "completedPts": [
+        19
+      ],
       "livePts": 0
     },
     "Labaron Philon": {
@@ -458,16 +422,20 @@
       "livePts": 0
     },
     "Joseph Tugler": {
-      "completedPts": [],
-      "livePts": 2
+      "completedPts": [
+        13
+      ],
+      "livePts": 0
     },
     "Christian Anderson": {
       "completedPts": [],
       "livePts": 0
     },
     "Kingston Flemings": {
-      "completedPts": [],
-      "livePts": 2
+      "completedPts": [
+        18
+      ],
+      "livePts": 0
     },
     "Milan Momcilovic": {
       "completedPts": [],
@@ -482,7 +450,9 @@
       "livePts": 0
     },
     "Tyon Grant-Foster": {
-      "completedPts": [],
+      "completedPts": [
+        9
+      ],
       "livePts": 0
     },
     "Nick Boyd": {
@@ -512,8 +482,10 @@
       "livePts": 0
     },
     "Milos Uzan": {
-      "completedPts": [],
-      "livePts": 3
+      "completedPts": [
+        12
+      ],
+      "livePts": 0
     },
     "Jaxon Kohler": {
       "completedPts": [
@@ -582,7 +554,9 @@
       "livePts": 0
     },
     "Emanuel Sharp": {
-      "completedPts": [],
+      "completedPts": [
+        16
+      ],
       "livePts": 0
     },
     "AJ Dybantsa": {
@@ -646,16 +620,20 @@
       "livePts": 0
     },
     "Keaton Wagler": {
-      "completedPts": [],
-      "livePts": 5
+      "completedPts": [
+        18
+      ],
+      "livePts": 0
     },
     "Solomon Ball": {
       "completedPts": [],
       "livePts": 0
     },
     "Andrej Stojakovic": {
-      "completedPts": [],
-      "livePts": 4
+      "completedPts": [
+        9
+      ],
+      "livePts": 0
     },
     "Pryce Sandfort": {
       "completedPts": [
@@ -676,7 +654,7 @@
       "newPpg": 10.3
     }
   },
-  "lastUpdated": "2026-03-20T02:22:37.810Z",
+  "lastUpdated": "2026-03-20T13:35:48.429Z",
   "_finalizedGameIds": [
     "401856489_Nebraska",
     "401856489_Troy",
@@ -700,6 +678,14 @@
     "401856492_Saint Mary's",
     "401856492_Texas A&M",
     "401856484_BYU",
-    "401856484_Texas"
+    "401856484_Texas",
+    "401856491_Illinois",
+    "401856491_Penn",
+    "401856493_Houston",
+    "401856493_Idaho",
+    "401856485_Gonzaga",
+    "401856485_Kennesaw State",
+    "401856487_Georgia",
+    "401856487_Saint Louis"
   ]
 }
