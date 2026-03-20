@@ -137,6 +137,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 <script>
 const GITHUB_USER="yonatancooper",GITHUB_REPO="mm-pool-2026",STATE_FILE="state.json";
 const RAW_URL=`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${STATE_FILE}`;
+const WORKER_URL = "https://mm-pool-espn.yonatancooper5.workers.dev";
 
 // Admin key: set this in your browser console with: localStorage.setItem("mm_admin_key","YOUR_SECRET")
 // Then the same secret must be set as ADMIN_KEY environment variable in your Cloudflare Worker
@@ -803,8 +804,6 @@ render();
 // ============================================================
 // ESPN LIVE SCORES VIA CLOUDFLARE WORKER
 // ============================================================
-// ⚠️ CHANGE THIS to your Cloudflare Worker URL after deploying
-const WORKER_URL = "https://mm-pool-espn.yonatancooper5.workers.dev";
 
 const ESPN_TEAM_MAP={
 "Duke Blue Devils":"Duke","UConn Huskies":"Connecticut","Connecticut Huskies":"Connecticut",
