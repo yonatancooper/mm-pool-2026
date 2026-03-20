@@ -1362,23 +1362,11 @@ async function manualESPNRefresh() {
 }
 
 function startAutoFetch() {
-  // Check worker health first
-  fetch(`${WORKER_URL}/health`, { signal: AbortSignal.timeout(5000) })
-    .then(r => r.json())
-    .then(d => {
-      if (d.status === "ok") {
-        updateLiveIndicator(false, true);
-        // Initial fetch
-        fetchESPNScores();
-        // Auto-refresh every 45 seconds
-        espnAutoInterval = setInterval(fetchESPNScores, 45000);
-      } else {
-        updateLiveIndicator(false, false);
-      }
-    })
-    .catch(() => {
-      updateLiveIndicator(false, false);
-    });
+  console.log("[MM Pool] Starting ESPN auto-fetch");
+  // Start immediately — no health check gate
+  fetchESPNScores();
+  // Auto-refresh every 45 seconds
+  espnAutoInterval = setInterval(fetchESPNScores, 45000);
 }
 
 // Also update getLiveWinP to use ESPN win prob as fallback
