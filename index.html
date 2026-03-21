@@ -449,7 +449,7 @@ async function fetchSharedState(){
 
 let _lastPushedHash = "";
 let _lastPushTime = 0;
-const MIN_PUSH_INTERVAL = 45 * 1000; // Push at most every 45 seconds (~800 writes/day during 10hrs of games)
+const MIN_PUSH_INTERVAL = 90 * 1000; // Push at most every 90 seconds
 
 function stateFingerprint(){
   // Quick hash of the parts that matter: player scores, team statuses, live games
