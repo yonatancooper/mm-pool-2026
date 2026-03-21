@@ -1048,44 +1048,59 @@ function resolveESPNTeam(displayName, abbrev) {
 }
 
 function matchPlayer(espnName, teamName) {
-  // Find our players on this team
   const teamPlayers = PLAYERS_DEFAULT.filter(p => {
     const sw = state.playerSwaps[p.name];
     return sw ? sw.newTeam === teamName : p.team === teamName;
   });
   if (teamPlayers.length === 0) return null;
 
-  // Check swapped names too
   const getActiveName = (p) => {
     const sw = state.playerSwaps[p.name];
     return sw ? sw.newName : p.name;
   };
 
-  // Direct match
+  // Normalize: strip suffixes, trim, lowercase
+  const normalize = (name) => name.toLowerCase()
+    .replace(/[,.]*/g, "") // remove commas and periods
+    .replace(/\s+(jr|sr|ii|iii|iv|v)\s*$/i, "") // strip suffixes
+    .trim();
+
+  const espnNorm = normalize(espnName);
+  const espnParts = espnNorm.split(" ");
+  const espnLast = espnParts[espnParts.length - 1];
+  const espnFirst = espnParts[0];
+
+  // Tier 1: Direct match (after normalization)
   for (const p of teamPlayers) {
-    if (getActiveName(p) === espnName) return p.name; // return original name (state key)
+    if (normalize(getActiveName(p)) === espnNorm) return p.name;
   }
 
-  // Last name match
-  const espnLast = espnName.split(" ").pop().toLowerCase();
+  // Tier 2: Last name match (using normalized names, so "Johnson" not "Jr.")
   const lastMatches = teamPlayers.filter(p => {
-    const activeName = getActiveName(p);
-    return activeName.split(" ").pop().toLowerCase() === espnLast;
+    const parts = normalize(getActiveName(p)).split(" ");
+    return parts[parts.length - 1] === espnLast;
   });
   if (lastMatches.length === 1) return lastMatches[0].name;
 
-  // Partial match (for names with Jr., III, etc.)
-  for (const p of teamPlayers) {
-    const activeName = getActiveName(p).toLowerCase();
-    const espnLower = espnName.toLowerCase();
-    // Check if last names match ignoring suffixes
-    const ourParts = activeName.replace(/\s+(jr\.?|sr\.?|ii|iii|iv)$/i, "").split(" ");
-    const espnParts = espnLower.replace(/\s+(jr\.?|sr\.?|ii|iii|iv)$/i, "").split(" ");
-    const ourLast = ourParts[ourParts.length - 1];
-    const espnLastClean = espnParts[espnParts.length - 1];
-    if (ourLast === espnLastClean && ourLast.length > 3) return p.name;
+  // Tier 3: First + last name match (handles middle name differences)
+  if (lastMatches.length > 1) {
+    const firstLastMatches = lastMatches.filter(p => {
+      const parts = normalize(getActiveName(p)).split(" ");
+      return parts[0] === espnFirst;
+    });
+    if (firstLastMatches.length === 1) return firstLastMatches[0].name;
   }
 
+  // Tier 4: First name + last name anywhere in the other name
+  for (const p of teamPlayers) {
+    const ourNorm = normalize(getActiveName(p));
+    const ourParts = ourNorm.split(" ");
+    const ourLast = ourParts[ourParts.length - 1];
+    if (ourLast === espnLast && ourLast.length > 3) return p.name;
+    if (ourParts[0] === espnFirst && ourParts[0].length > 3) return p.name;
+  }
+
+  console.warn(`[MM Pool] Player not matched: "${espnName}" on ${teamName}`);
   return null;
 }
 
