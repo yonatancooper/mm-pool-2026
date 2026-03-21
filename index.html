@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>2026 March Madness Pool — Live Scoreboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -304,6 +305,86 @@ const TEAM_META={
 };
 
 const TEAM_COLORS={"Duke":"#003087","Michigan":"#00274C","Arizona":"#CC0033","Florida":"#0021A5","Arkansas":"#9D2235","Houston":"#C8102E","Illinois":"#E84A27","Gonzaga":"#002967","Iowa State":"#C8102E","Alabama":"#9E1B32","Purdue":"#CEB888","Vanderbilt":"#866D4B","Michigan State":"#18453B","Kansas":"#0051BA","Connecticut":"#000E2F","St. John's":"#D41B2C","Nebraska":"#E41C38","Virginia":"#232D4B","Wisconsin":"#C5050C","Tennessee":"#FF8200","Texas Tech":"#CC0000","BYU":"#002E5D","Louisville":"#AD0000","Ohio State":"#BB0000","UCLA":"#2D68C4","North Carolina":"#7BAFD4","Akron":"#041E42"};
+
+// Silver Bulletin team name → internal name mapping
+const SB_NAME_MAP={
+"Duke":"Duke","Siena":"Siena","Ohio St.":"Ohio State","TCU":"TCU",
+"St. John's":"St. John's","Northern Iowa":"Northern Iowa","Kansas":"Kansas",
+"California Baptist":"Cal. Baptist","Louisville":"Louisville","South Florida":"South Florida",
+"Michigan St.":"Michigan State","North Dakota St.":"North Dakota State",
+"UCLA":"UCLA","UCF":"UCF","UConn":"Connecticut","Furman":"Furman",
+"Florida":"Florida","Prairie View A&M":"Prairie View","Lehigh":"Lehigh",
+"Clemson":"Clemson","Iowa":"Iowa","Vanderbilt":"Vanderbilt","McNeese":"McNeese",
+"Nebraska":"Nebraska","Troy":"Troy","North Carolina":"North Carolina","VCU":"VCU",
+"Illinois":"Illinois","Penn":"Penn","Saint Mary's (CA)":"Saint Mary's",
+"Texas A&M":"Texas A&M","Houston":"Houston","Idaho":"Idaho",
+"Arizona":"Arizona","LIU":"LIU","Villanova":"Villanova","Utah St.":"Utah State",
+"Wisconsin":"Wisconsin","High Point":"High Point","Arkansas":"Arkansas","Hawaii":"Hawaii",
+"BYU":"BYU","Texas":"Texas","NC State":"NC State","Gonzaga":"Gonzaga",
+"Kennesaw St.":"Kennesaw State","U Miami (FL)":"Miami (Fla.)","Missouri":"Missouri",
+"Purdue":"Purdue","Queens":"Queens",
+"Michigan":"Michigan","UMBC":"UMBC","Howard":"Howard","Georgia":"Georgia",
+"Saint Louis":"Saint Louis","Texas Tech":"Texas Tech","Akron":"Akron",
+"Alabama":"Alabama","Hofstra":"Hofstra","Tennessee":"Tennessee",
+"Miami University (OH)":"Miami (OH)","SMU":"SMU","Virginia":"Virginia",
+"Wright St.":"Wright State","Kentucky":"Kentucky","Santa Clara":"Santa Clara",
+"Iowa St.":"Iowa State","Tennessee St.":"Tennessee State",
+};
+
+function uploadProbabilities(){
+  const input=document.createElement("input");
+  input.type="file";input.accept=".xlsx,.xls";
+  input.onchange=async()=>{
+    const file=input.files[0];
+    if(!file)return;
+    try{
+      const data=await file.arrayBuffer();
+      const wb=XLSX.read(data,{type:"array"});
+      const ws=wb.Sheets[wb.SheetNames[0]]; // First tab
+      const rows=XLSX.utils.sheet_to_json(ws);
+
+      let updated=0,notFound=[];
+      for(const row of rows){
+        const sbName=row["Team"];
+        const internal=SB_NAME_MAP[sbName];
+        if(!internal){notFound.push(sbName);continue;}
+        if(!BASE_PROBS[internal])continue;
+
+        const probs=[
+          parseFloat(row["Rd64"])||0,
+          parseFloat(row["Rd32"])||0,
+          parseFloat(row["Sweet16"])||0,
+          parseFloat(row["Elite8"])||0,
+          parseFloat(row["Final4"])||0,
+          parseFloat(row["Finals"])||0,
+          parseFloat(row["Champion"])||0,
+        ];
+
+        // Update BASE_PROBS directly (const object, mutable properties)
+        BASE_PROBS[internal]=probs;
+        updated++;
+      }
+
+      // Clear any existing overrides since we've updated the baseline
+      state.probOverrides={};
+      saveState();
+      pushStateToWorker(true);
+      render();
+      if(currentTab==="admin")renderAdmin();
+
+      const ts=rows[0]?.["Timestamp"]||"unknown";
+      let msg=`Updated ${updated} teams from Silver Bulletin (${ts})`;
+      if(notFound.length>0)msg+=` · ${notFound.length} unmapped: ${notFound.slice(0,3).join(", ")}`;
+      showToast(msg);
+      console.log(`[MM Pool] Probabilities uploaded: ${updated} teams, timestamp: ${ts}`);
+      if(notFound.length>0)console.warn("[MM Pool] Unmapped teams:",notFound);
+    }catch(e){
+      console.error("[MM Pool] Upload failed:",e);
+      showToast("Failed to parse file: "+e.message);
+    }
+  };
+  input.click();
+}
 
 // === STATE ===
 let state = loadState();
@@ -697,8 +778,12 @@ function renderAdmin(){
   h+=`</div></div>`;
 
   // Probability overrides
-  h+=`<div class="admin-panel"><div class="admin-title">Update Probabilities <button class="btn" onclick="state.probOverrides={};saveState();renderAdmin();render();showToast('Reset to baseline');" style="font-size:10px">Reset</button></div>
-  <p class="help-text">After each round, paste new Silver Bulletin numbers. Decimals (0.85 = 85%). Blank = keep original.</p>
+  h+=`<div class="admin-panel"><div class="admin-title">Update Probabilities
+    <div style="display:flex;gap:6px">
+      <button class="btn primary" onclick="uploadProbabilities()" style="font-size:10px">📤 Upload Silver Bulletin .xlsx</button>
+      <button class="btn" onclick="state.probOverrides={};saveState();renderAdmin();render();showToast('Reset to baseline');" style="font-size:10px">Reset</button>
+    </div></div>
+  <p class="help-text">Upload the Silver Bulletin projections Excel file (first tab) to auto-update all probabilities. Or edit manually below.</p>
   <div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
   <tr style="color:var(--text3);font-family:'Oswald',sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:1px">
     <th style="text-align:left;padding:6px">Team</th>${ROUND_NAMES.map(r=>`<th style="text-align:center;padding:6px">${r}</th>`).join("")}</tr>`;
