@@ -1318,7 +1318,8 @@ async function fetchESPNScores() {
             ts.liveGame = null;
           }
 
-          const alreadyFinalized = state._finalizedGameIds.includes(game.id + "_" + teamName);
+          const finalKey = game.id + "_" + teamName;
+          const alreadyFinalized = state._finalizedGameIds.includes(finalKey);
 
           if (!alreadyFinalized) {
             const won = teamScore > oppScore;
@@ -1331,12 +1332,15 @@ async function fetchESPNScores() {
               }
             }
 
-            state._finalizedGameIds.push(game.id + "_" + teamName);
+            state._finalizedGameIds.push(finalKey);
+          }
 
-            if (hasOurTeam(teamName)) {
-              finalizedTeams.add(teamName);
-              finalGameIds.push(game.id);
-            }
+          // Always queue our tracked teams for final box-score reconciliation,
+          // even if this final was already processed in a previous refresh.
+          // This lets later refreshes backfill missing player points from earlier today.
+          if (hasOurTeam(teamName)) {
+            finalizedTeams.add(teamName);
+            finalGameIds.push(game.id);
           }
         }
       }
@@ -1381,9 +1385,16 @@ async function fetchESPNScores() {
           if (isFinalGame && finalizedTeams.has(teamName)) {
             if (!Array.isArray(playerState.completedPts)) playerState.completedPts = [];
             const teamGP = state.teams[teamName]?.gamesPlayed || 0;
-            if (playerState.completedPts.length < teamGP) {
-              playerState.completedPts.push(ps.pts);
-              console.log(`[MM Pool] Final: ${ourPlayerKey} → ${ps.pts}pts → completedPts`);
+            const finalIdx = Math.max(0, teamGP - 1);
+            if (teamGP > 0) {
+              const prev = playerState.completedPts[finalIdx];
+              playerState.completedPts[finalIdx] = ps.pts;
+              if (playerState.completedPts.length > teamGP) {
+                playerState.completedPts = playerState.completedPts.slice(0, teamGP);
+              }
+              if (prev !== ps.pts) {
+                console.log(`[MM Pool] Final sync: ${ourPlayerKey} round ${teamGP} → ${ps.pts}pts`);
+              }
             }
             playerState.livePts = 0;
           } else if (!isFinalGame) {
