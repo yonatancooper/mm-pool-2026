@@ -52,13 +52,19 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .progress-fill{height:100%;border-radius:2px;transition:width .5s ease}
 .player-panel{display:none;background:var(--surface2);border-radius:0 0 8px 8px;margin-top:-4px;margin-bottom:4px;overflow-x:auto}
 .player-panel.open{display:block}
-.player-row{display:grid;grid-template-columns:1fr 80px repeat(6,38px) 50px 60px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--surface3);gap:0;font-size:13px;min-width:700px}
+.player-row{display:grid;grid-template-columns:1fr 116px repeat(6,38px) 50px 60px 68px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--surface3);gap:0;font-size:13px;min-width:790px}
 .player-row:last-child{border-bottom:none}
 .player-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .player-team-badge{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:0.5px}
 .player-name{font-weight:600;font-size:13px}
 .player-ppg{color:var(--text3);font-size:11px}
+.player-status-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;justify-self:center;min-width:104px}
 .player-status{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;justify-self:center}
+.player-status-detail{font-family:'JetBrains Mono',monospace;font-size:9px;line-height:1.1;color:var(--text2);text-align:center;white-space:nowrap}
+.player-status-detail.live{color:var(--accent2)}
+.player-status-detail.eliminated{color:var(--red)}
+.player-status-detail.active{color:var(--green)}
+.player-status-detail.upcoming{color:var(--blue)}
 .player-status.live{background:rgba(255,68,68,0.15);color:var(--live-pulse);animation:pulse-text 1.5s infinite}
 .player-status.eliminated{background:rgba(231,76,60,0.15);color:var(--red)}
 .player-status.active{background:rgba(46,204,113,0.15);color:var(--green)}
@@ -73,6 +79,9 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .round-cell.eliminated{color:var(--surface3);font-size:10px}
 .player-total{font-family:'JetBrains Mono',monospace;text-align:right;font-weight:700;font-size:13px;justify-self:end;color:var(--green)}
 .player-proj-total{font-family:'JetBrains Mono',monospace;text-align:right;font-size:12px;justify-self:end;color:var(--accent2)}
+.player-exp-wrap{justify-self:end;display:flex;flex-direction:column;align-items:flex-end;line-height:1}
+.player-exp-rem{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--accent);text-align:right}
+.player-exp-label{font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3);margin-top:3px}
 .admin-panel{background:var(--surface);border-radius:10px;padding:20px;margin-bottom:16px;border:1px solid var(--surface3)}
 .admin-title{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;color:var(--accent);display:flex;align-items:center;justify-content:space-between}
 .admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:8px}
@@ -99,7 +108,8 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 @media(max-width:768px){
   .header-inner{flex-direction:column;align-items:flex-start}
   .title{font-size:22px}
-  .player-row{font-size:11px;padding:6px 12px;grid-template-columns:1fr 60px repeat(6,32px) 42px 50px}
+  .player-row{font-size:11px;padding:6px 12px;grid-template-columns:1fr 92px repeat(6,32px) 42px 50px 58px;min-width:720px}
+  .player-status-wrap{min-width:88px}
   .player-name{font-size:11px}
   .round-cell{font-size:10px}
   .admin-grid{grid-template-columns:1fr}
@@ -683,14 +693,26 @@ function renderStandings(){
       <td class="pts projected"><span class="pts-label">Projected</span>${s.totalProjected.toFixed(1)}</td>
       <td><div class="progress-bar"><div class="progress-fill" style="width:${bar}%;background:${bc}"></div></div></td></tr>`;
     h+=`<tr><td colspan="5" style="padding:0;border:none"><div class="player-panel ${expanded?'open':''}">`;
-    h+=`<div class="player-row" style="font-size:9px;color:var(--text3);font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:1px;padding:6px 16px;border-bottom:1px solid var(--surface3)"><span>Player</span><span style="justify-self:center">Status</span><span style="justify-self:center">R64</span><span style="justify-self:center">R32</span><span style="justify-self:center">S16</span><span style="justify-self:center">E8</span><span style="justify-self:center">F4</span><span style="justify-self:center">CG</span><span style="justify-self:end">Total</span><span style="justify-self:end">Proj</span></div>`;
+    h+=`<div class="player-row" style="font-size:9px;color:var(--text3);font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:1px;padding:6px 16px;border-bottom:1px solid var(--surface3)"><span>Player</span><span style="justify-self:center">Status</span><span style="justify-self:center">R64</span><span style="justify-self:center">R32</span><span style="justify-self:center">S16</span><span style="justify-self:center">E8</span><span style="justify-self:center">F4</span><span style="justify-self:center">CG</span><span style="justify-self:end">Total</span><span style="justify-self:end">Proj</span><span style="justify-self:end">Exp Rem</span></div>`;
     for(const p of s.players){
       const tc=TEAM_COLORS[p.team]||"#555";
-      let st="",sc=p.status;
-      if(p.status==="live")st=`🔴 LIVE`;
-      else if(p.status==="eliminated")st="OUT";
-      else if(p.status==="active")st="✓";
-      else st="—";
+      let st="",sc=p.status,detail="";
+      if(p.status==="live"){
+        st=`🔴 LIVE`;
+        detail=`${(p.minRem||0).toFixed(1)}m · ${((p.winP||0)*100).toFixed(0)}%`;
+      }
+      else if(p.status==="eliminated"){
+        st="OUT";
+        detail="season done";
+      }
+      else if(p.status==="active"){
+        st="ALIVE";
+        detail="awaiting next tip";
+      }
+      else {
+        st="UP NEXT";
+        detail="opening game ahead";
+      }
 
       // Get round-by-round data
       const ps=state.players[p.origName||p.name]||{completedPts:[],livePts:0};
@@ -722,7 +744,7 @@ function renderStandings(){
         }
       }
 
-      h+=`<div class="player-row"><div class="player-info"><span class="player-team-badge" style="background:${tc};color:#fff">${TEAM_META[p.team]?.seed||""} ${p.team}</span><span class="player-name">${p.name}${p.swapped?' ⇄':''}</span><span class="player-ppg">${p.ppg}</span></div><span class="player-status ${sc}">${st}</span>${roundCells}<span class="player-total">${p.actual>0?p.actual.toFixed(0):"—"}</span><span class="player-proj-total">${p.projected.toFixed(1)}</span></div>`;
+      h+=`<div class="player-row"><div class="player-info"><span class="player-team-badge" style="background:${tc};color:#fff">${TEAM_META[p.team]?.seed||""} ${p.team}</span><span class="player-name">${p.name}${p.swapped?' ⇄':''}</span><span class="player-ppg">${p.ppg} ppg</span></div><span class="player-status-wrap"><span class="player-status ${sc}">${st}</span><span class="player-status-detail ${sc}">${detail}</span></span>${roundCells}<span class="player-total">${p.actual>0?p.actual.toFixed(0):"—"}</span><span class="player-proj-total">${p.projected.toFixed(1)}</span><span class="player-exp-wrap"><span class="player-exp-rem">${p.expGamesRem.toFixed(2)}</span><span class="player-exp-label">games</span></span></div>`;
     }
     h+=`</div></td></tr>`;
   });
