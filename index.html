@@ -360,6 +360,7 @@ function uploadProbabilities(){
       const rows=XLSX.utils.sheet_to_json(ws);
 
       let updated=0,notFound=[];
+      const uploadedProbBase={};
       for(const row of rows){
         const sbName=row["Team"];
         const internal=SB_NAME_MAP[sbName];
@@ -376,15 +377,16 @@ function uploadProbabilities(){
           parseFloat(row["Champion"])||0,
         ];
 
-        // Update BASE_PROBS directly (const object, mutable properties)
-        BASE_PROBS[internal]=probs;
+        uploadedProbBase[internal]=probs;
         updated++;
       }
 
-      // Clear any existing overrides since we've updated the baseline
+      // Persist uploaded baselines into shared state so viewers receive them too.
+      state.probBase=uploadedProbBase;
+      // Clear any existing manual overrides since the new sheet becomes the baseline.
       state.probOverrides={};
       saveState();
-      pushStateToWorker(true);
+      await pushStateToWorker(true);
       render();
       if(currentTab==="admin")renderAdmin();
 
@@ -392,7 +394,7 @@ function uploadProbabilities(){
       let msg=`Updated ${updated} teams from Silver Bulletin (${ts})`;
       if(notFound.length>0)msg+=` · ${notFound.length} unmapped: ${notFound.slice(0,3).join(", ")}`;
       showToast(msg);
-      console.log(`[MM Pool] Probabilities uploaded: ${updated} teams, timestamp: ${ts}`);
+      console.log(`[MM Pool] Probabilities uploaded + persisted: ${updated} teams, timestamp: ${ts}`);
       if(notFound.length>0)console.warn("[MM Pool] Unmapped teams:",notFound);
     }catch(e){
       console.error("[MM Pool] Upload failed:",e);
@@ -407,13 +409,19 @@ let state = loadState();
 function defaultState(){
   const teams={};for(const t of Object.keys(BASE_PROBS))teams[t]={status:"active",gamesPlayed:0,liveGame:null};
   const players={};for(const p of PLAYERS_DEFAULT)players[p.name]={completedPts:[],livePts:0};
-  return{version:2,teams,players,probOverrides:{},playerSwaps:{},lastUpdated:null};
+  return{version:2,teams,players,probBase:{},probOverrides:{},playerSwaps:{},lastUpdated:null};
 }
 function loadState(){try{const s=localStorage.getItem("mm2026_v2");if(s){const p=JSON.parse(s);if(p.version===2)return ensure(p);}}catch(e){}return defaultState();}
 function ensure(s){
+  if(!s.teams)s.teams={};
   for(const t of Object.keys(BASE_PROBS))if(!s.teams[t])s.teams[t]={status:"active",gamesPlayed:0,liveGame:null};
+  if(!s.players)s.players={};
   for(const p of PLAYERS_DEFAULT)if(!s.players[p.name])s.players[p.name]={completedPts:[],livePts:0};
-  if(!s.probOverrides)s.probOverrides={};if(!s.playerSwaps)s.playerSwaps={};if(!s._finalizedGameIds)s._finalizedGameIds=[];return s;
+  if(!s.probBase)s.probBase={};
+  if(!s.probOverrides)s.probOverrides={};
+  if(!s.playerSwaps)s.playerSwaps={};
+  if(!s._finalizedGameIds)s._finalizedGameIds=[];
+  return s;
 }
 function saveState(){state.lastUpdated=new Date().toISOString();localStorage.setItem("mm2026_v2",JSON.stringify(state));}
 
@@ -427,11 +435,16 @@ function getPlayers(){
 }
 
 // === PROBABILITY ENGINE ===
+function getBaseProbs(team){
+  const base=(state.probBase&&state.probBase[team])||BASE_PROBS[team];
+  if(!base)return[0,0,0,0,0,0,0];
+  return [...base];
+}
 function getProbs(team){
-  const base=BASE_PROBS[team];if(!base)return[0,0,0,0,0,0,0];
+  const base=getBaseProbs(team);
   const ov=state.probOverrides[team];
   if(ov)return ov.map((v,i)=>v!=null?v:base[i]);
-  return[...base];
+  return base;
 }
 function condWin(probs,r){if(r>=6||probs[r]<0.0001)return 0;return probs[r+1]/probs[r];}
 function ml2prob(ml){if(ml==null||ml===0||isNaN(ml))return null;return ml<0?Math.abs(ml)/(Math.abs(ml)+100):100/(ml+100);}
@@ -594,7 +607,7 @@ let _lastPushTime = 0;
 const MIN_PUSH_INTERVAL = 90 * 1000; // Push at most every 90 seconds
 
 function stateFingerprint(){
-  // Quick hash of the parts that matter: player scores, team statuses, live games
+  // Quick hash of the parts that matter: player scores, team statuses, live games, and probability state
   let s = "";
   for(const p of PLAYERS_DEFAULT){
     const ps = state.players[p.name];
@@ -603,6 +616,10 @@ function stateFingerprint(){
   for(const t of Object.keys(state.teams)){
     const ts = state.teams[t];
     if(ts) s += ts.status + ts.gamesPlayed + (ts.liveGame ? ts.liveGame.teamScore + "-" + ts.liveGame.oppScore : "x") + ";";
+  }
+  for(const t of Object.keys(BASE_PROBS).sort()){
+    if(state.probBase&&state.probBase[t]) s += "B:" + t + ":" + state.probBase[t].join(",") + ";";
+    if(state.probOverrides&&state.probOverrides[t]) s += "O:" + t + ":" + state.probOverrides[t].join(",") + ";";
   }
   return s;
 }
@@ -840,14 +857,14 @@ function renderAdmin(){
   h+=`<div class="admin-panel"><div class="admin-title">Update Probabilities
     <div style="display:flex;gap:6px">
       <button class="btn primary" onclick="uploadProbabilities()" style="font-size:10px">📤 Upload Silver Bulletin .xlsx</button>
-      <button class="btn" onclick="state.probOverrides={};saveState();renderAdmin();render();showToast('Reset to baseline');" style="font-size:10px">Reset</button>
+      <button class="btn" onclick="state.probBase={};state.probOverrides={};saveState();pushStateToWorker(true);renderAdmin();render();showToast('Reset to built-in baseline');" style="font-size:10px">Reset</button>
     </div></div>
-  <p class="help-text">Upload the Silver Bulletin projections Excel file (first tab) to auto-update all probabilities. Or edit manually below.</p>
+  <p class="help-text">Upload the Silver Bulletin projections Excel file (first tab) to auto-update all probabilities. Uploaded baselines are persisted into shared state so non-admin browsers receive them on sync. Or edit manually below.</p>
   <div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
   <tr style="color:var(--text3);font-family:'Oswald',sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:1px">
     <th style="text-align:left;padding:6px">Team</th>${ROUND_NAMES.map(r=>`<th style="text-align:center;padding:6px">${r}</th>`).join("")}</tr>`;
   for(const team of relevantTeams){
-    const base=BASE_PROBS[team];const ov=state.probOverrides[team];const s=team.replace(/[^a-zA-Z0-9]/g,'');
+    const base=getBaseProbs(team);const ov=state.probOverrides[team];const s=team.replace(/[^a-zA-Z0-9]/g,'');
     h+=`<tr style="border-top:1px solid var(--surface3)"><td style="padding:6px;font-weight:600;font-size:11px">${team}</td>`;
     for(let i=0;i<7;i++){
       const v=ov?(ov[i]!=null?ov[i]:base[i]):base[i];
@@ -905,7 +922,7 @@ function saveAdmin(){
     if(le)state.players[p.name].livePts=parseInt(le.value)||0;
   }
   for(const team of relevantTeams){
-    const s=team.replace(/[^a-zA-Z0-9]/g,'');const base=BASE_PROBS[team];
+    const s=team.replace(/[^a-zA-Z0-9]/g,'');const base=getBaseProbs(team);
     const ov=[];let has=false;
     for(let i=0;i<7;i++){
       const v=parseFloat(document.getElementById(`pr-${s}-${i}`)?.value);
