@@ -1061,7 +1061,7 @@ function matchPlayer(espnName, teamName) {
 
   // Normalize: strip suffixes, trim, lowercase
   const normalize = (name) => name.toLowerCase()
-    .replace(/[,.]*/g, "") // remove commas and periods
+    .replace(/[,.]/g, "") // remove commas and periods
     .replace(/\s+(jr|sr|ii|iii|iv|v)\s*$/i, "") // strip suffixes
     .trim();
 
@@ -1091,13 +1091,12 @@ function matchPlayer(espnName, teamName) {
     if (firstLastMatches.length === 1) return firstLastMatches[0].name;
   }
 
-  // Tier 4: First name + last name anywhere in the other name
+  // Tier 4: Last name match with shorter names (allows 3+ char last names)
   for (const p of teamPlayers) {
     const ourNorm = normalize(getActiveName(p));
     const ourParts = ourNorm.split(" ");
     const ourLast = ourParts[ourParts.length - 1];
-    if (ourLast === espnLast && ourLast.length > 3) return p.name;
-    if (ourParts[0] === espnFirst && ourParts[0].length > 3) return p.name;
+    if (ourLast === espnLast && ourLast.length > 2) return p.name;
   }
 
   console.warn(`[MM Pool] Player not matched: "${espnName}" on ${teamName}`);
@@ -1141,7 +1140,7 @@ async function reconcileScores() {
   _lastReconcile = now;
   console.log("[MM Pool] Reconciliation starting...");
   try {
-    const resp = await fetch(`${WORKER_URL}/scoreboard`, {signal: AbortSignal.timeout(10000)});
+    const resp = await fetch(`${WORKER_URL}/scoreboard?_t=${Date.now()}`, {signal: AbortSignal.timeout(10000)});
     if (!resp.ok) { console.warn("[MM Pool] Reconcile: scoreboard fetch failed"); return; }
     const data = await resp.json();
     if (!data.games) return;
@@ -1159,7 +1158,7 @@ async function reconcileScores() {
       const hasOur = (homeName && ourTeams.has(homeName)) || (awayName && ourTeams.has(awayName));
       if (!hasOur) continue;
       try {
-        const bResp = await fetch(`${WORKER_URL}/boxscore?gameId=${game.id}`, {signal: AbortSignal.timeout(10000)});
+        const bResp = await fetch(`${WORKER_URL}/boxscore?gameId=${game.id}&_t=${Date.now()}`, {signal: AbortSignal.timeout(10000)});
         if (!bResp.ok) continue;
         const bData = await bResp.json();
         const truthMap = {};
@@ -1212,10 +1211,9 @@ async function fetchESPNScores() {
   try {
     const allGames = [];
 
-    // PRIMARY: Fetch tournament scoreboard WITHOUT date filter
-    // ESPN returns all active/recent tournament games with groups=100
+    // Fetch tournament scoreboard WITHOUT date (catches most games)
     try {
-      const resp = await fetch(`${WORKER_URL}/scoreboard`, {
+      const resp = await fetch(`${WORKER_URL}/scoreboard?_t=${Date.now()}`, {
         signal: AbortSignal.timeout(8000)
       });
       if (resp.ok) {
@@ -1227,25 +1225,23 @@ async function fetchESPNScores() {
       }
     } catch(e) { console.warn(`[MM Pool] Tournament scoreboard failed:`, e.message); }
 
-    // FALLBACK: If no games found, try explicit dates (today + yesterday)
-    if (allGames.length === 0) {
-      const today = new Date();
-      const yesterday = new Date(today.getTime() - 24*60*60*1000);
-      const fmt = d => d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
-      for (const dateStr of [fmt(today), fmt(yesterday)]) {
-        try {
-          const resp = await fetch(`${WORKER_URL}/scoreboard?date=${dateStr}`, {
-            signal: AbortSignal.timeout(8000)
-          });
-          if (resp.ok) {
-            const data = await resp.json();
-            if (data.games) {
-              console.log(`[MM Pool] Date ${dateStr}: ${data.games.length} games`);
-              allGames.push(...data.games);
-            }
+    // ALWAYS also fetch today + yesterday (catches games the dateless endpoint misses)
+    const today = new Date();
+    const yesterday = new Date(today.getTime() - 24*60*60*1000);
+    const fmt = d => d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+    for (const dateStr of [fmt(today), fmt(yesterday)]) {
+      try {
+        const resp = await fetch(`${WORKER_URL}/scoreboard?date=${dateStr}&_t=${Date.now()}`, {
+          signal: AbortSignal.timeout(8000)
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.games && data.games.length > 0) {
+            console.log(`[MM Pool] Date ${dateStr}: ${data.games.length} games`);
+            allGames.push(...data.games);
           }
-        } catch(e) { console.warn(`[MM Pool] Scoreboard ${dateStr} failed:`, e.message); }
-      }
+        }
+      } catch(e) { console.warn(`[MM Pool] Scoreboard ${dateStr} failed:`, e.message); }
     }
 
     if (allGames.length === 0) {
@@ -1359,7 +1355,7 @@ async function fetchESPNScores() {
     // Helper: fetch one box score and update player points
     async function fetchAndApplyBoxScore(gameId, isFinalGame) {
       try {
-        const bResp = await fetch(`${WORKER_URL}/boxscore?gameId=${gameId}`, {
+        const bResp = await fetch(`${WORKER_URL}/boxscore?gameId=${gameId}&_t=${Date.now()}`, {
           signal: AbortSignal.timeout(10000)
         });
         if (!bResp.ok) {
@@ -1367,32 +1363,35 @@ async function fetchESPNScores() {
           return;
         }
         const bData = await bResp.json();
+        if (!bData.players || bData.players.length === 0) {
+          console.warn(`[MM Pool] Box score ${gameId}: no players in response`);
+          return;
+        }
 
-        for (const ps of (bData.players || [])) {
+        let matched = 0;
+        for (const ps of bData.players) {
           const teamName = resolveESPNTeam(ps.team, ps.abbrev);
           if (!teamName) continue;
           const ourPlayerKey = matchPlayer(ps.name, teamName);
           if (!ourPlayerKey || !state.players[ourPlayerKey]) continue;
 
+          matched++;
           const playerState = state.players[ourPlayerKey];
 
           if (isFinalGame && finalizedTeams.has(teamName)) {
-            // Game is FINAL: move points to completedPts, clear livePts
             if (!Array.isArray(playerState.completedPts)) playerState.completedPts = [];
-            // Guard: only push if player doesn't already have points for this round
             const teamGP = state.teams[teamName]?.gamesPlayed || 0;
             if (playerState.completedPts.length < teamGP) {
               playerState.completedPts.push(ps.pts);
-              console.log(`[MM Pool] Final: ${ps.name} → ${ps.pts}pts → completedPts`);
-            } else {
-              console.log(`[MM Pool] Final: ${ps.name} already has ${playerState.completedPts.length} entries (gp=${teamGP}), skipping push`);
+              console.log(`[MM Pool] Final: ${ourPlayerKey} → ${ps.pts}pts → completedPts`);
             }
             playerState.livePts = 0;
           } else if (!isFinalGame) {
-            // Game is LIVE: update livePts
+            console.log(`[MM Pool] Live: ${ourPlayerKey} → ${ps.pts}pts`);
             playerState.livePts = ps.pts;
           }
         }
+        console.log(`[MM Pool] Box score ${gameId}: ${bData.players.length} players, ${matched} matched to pool`);
       } catch (e) {
         console.warn(`[MM Pool] Box score ${gameId} failed:`, e.message);
       }
