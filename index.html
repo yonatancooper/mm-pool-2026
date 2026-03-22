@@ -1124,157 +1124,216 @@ function getMinutesRemaining(status) {
   return clockMins; // OT
 }
 
+// ============================================================
+// SCOREBOARD HELPERS + HOURLY RECONCILIATION
+// ============================================================
 let espnAutoInterval = null;
 let lastESPNFetch = null;
-
-// ============================================================
-// HOURLY RECONCILIATION — verifies all finished games against ESPN box scores
-// ============================================================
 let _lastReconcile = 0;
 const RECONCILE_INTERVAL = 60 * 60 * 1000; // 1 hour
+
+function buildScoreboardDates() {
+  const today = new Date();
+  const yesterday = new Date(today.getTime() - 24*60*60*1000);
+  const tomorrow = new Date(today.getTime() + 24*60*60*1000);
+  const fmt = d => d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+  return [fmt(yesterday), fmt(today), fmt(tomorrow)];
+}
+
+async function collectScoreboardGames(logPrefix = "[MM Pool]") {
+  const allGames = [];
+
+  try {
+    const resp = await fetch(`${WORKER_URL}/scoreboard?_t=${Date.now()}`, {
+      signal: AbortSignal.timeout(8000)
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.games && data.games.length > 0) {
+        console.log(`${logPrefix} Tournament scoreboard: ${data.games.length} games`);
+        allGames.push(...data.games);
+      }
+    }
+  } catch (e) {
+    console.warn(`${logPrefix} Tournament scoreboard failed:`, e.message);
+  }
+
+  for (const dateStr of buildScoreboardDates()) {
+    try {
+      const resp = await fetch(`${WORKER_URL}/scoreboard?date=${dateStr}&_t=${Date.now()}`, {
+        signal: AbortSignal.timeout(8000)
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.games && data.games.length > 0) {
+          console.log(`${logPrefix} Date ${dateStr}: ${data.games.length} games`);
+          allGames.push(...data.games);
+        }
+      }
+    } catch (e) {
+      console.warn(`${logPrefix} Scoreboard ${dateStr} failed:`, e.message);
+    }
+  }
+
+  const seen = new Set();
+  const games = allGames.filter(g => {
+    if (!g || !g.id) return false;
+    if (seen.has(g.id)) return false;
+    seen.add(g.id);
+    return true;
+  });
+
+  console.log(`${logPrefix} Processing ${games.length} unique games`);
+  return games;
+}
+
+function getFinalRoundIndex(teamName, game) {
+  const ts = state.teams[teamName];
+  if (!ts || !game) return 0;
+
+  const homeName = resolveESPNTeam(game.home?.name, game.home?.abbrev);
+  const awayName = resolveESPNTeam(game.away?.name, game.away?.abbrev);
+  const isHome = teamName === homeName;
+  const teamScore = isHome ? Number(game.home?.score || 0) : Number(game.away?.score || 0);
+  const oppScore = isHome ? Number(game.away?.score || 0) : Number(game.home?.score || 0);
+  const won = teamScore > oppScore;
+  const wins = ts.gamesPlayed || 0;
+
+  // gamesPlayed tracks WINS, not games played.
+  // So:
+  // - if team WON this final, the game occupies slot wins-1
+  // - if team LOST this final, the game occupies slot wins
+  return Math.max(0, won ? (wins - 1) : wins);
+}
 
 async function reconcileScores() {
   if (!IS_ADMIN) return;
   const now = Date.now();
   if (now - _lastReconcile < RECONCILE_INTERVAL) return;
   _lastReconcile = now;
+
   console.log("[MM Pool] Reconciliation starting...");
   try {
-    const resp = await fetch(`${WORKER_URL}/scoreboard?_t=${Date.now()}`, {signal: AbortSignal.timeout(10000)});
-    if (!resp.ok) { console.warn("[MM Pool] Reconcile: scoreboard fetch failed"); return; }
-    const data = await resp.json();
-    if (!data.games) return;
+    const games = await collectScoreboardGames("[MM Pool][Reconcile]");
+    if (!games.length) return;
+
     const ourTeams = new Set();
     for (const p of PLAYERS_DEFAULT) {
       const sw = state.playerSwaps[p.name];
       ourTeams.add(sw ? sw.newTeam : p.team);
     }
+
     let fixes = 0;
-    for (const game of data.games) {
-      const isFinal = game.status.type === "STATUS_FINAL" || game.status.completed;
+
+    for (const game of games) {
+      const isFinal = game.status?.type === "STATUS_FINAL" || game.status?.completed;
       if (!isFinal) continue;
-      const homeName = resolveESPNTeam(game.home.name, game.home.abbrev);
-      const awayName = resolveESPNTeam(game.away.name, game.away.abbrev);
+
+      const homeName = resolveESPNTeam(game.home?.name, game.home?.abbrev);
+      const awayName = resolveESPNTeam(game.away?.name, game.away?.abbrev);
       const hasOur = (homeName && ourTeams.has(homeName)) || (awayName && ourTeams.has(awayName));
       if (!hasOur) continue;
+
       try {
-        const bResp = await fetch(`${WORKER_URL}/boxscore?gameId=${game.id}&_t=${Date.now()}`, {signal: AbortSignal.timeout(10000)});
+        const bResp = await fetch(`${WORKER_URL}/boxscore?gameId=${game.id}&_t=${Date.now()}`, {
+          signal: AbortSignal.timeout(10000)
+        });
         if (!bResp.ok) continue;
+
         const bData = await bResp.json();
         const truthMap = {};
+
         for (const ps of (bData.players || [])) {
           const teamName = resolveESPNTeam(ps.team, ps.abbrev);
           if (!teamName) continue;
           const ourKey = matchPlayer(ps.name, teamName);
           if (ourKey) truthMap[ourKey] = {pts: ps.pts, team: teamName};
         }
+
         for (const [teamName, isHome] of [[homeName, true], [awayName, false]]) {
           if (!teamName || !state.teams[teamName]) continue;
           const ts = state.teams[teamName];
-          const teamScore = isHome ? game.home.score : game.away.score;
-          const oppScore = isHome ? game.away.score : game.home.score;
+          const teamScore = isHome ? Number(game.home?.score || 0) : Number(game.away?.score || 0);
+          const oppScore = isHome ? Number(game.away?.score || 0) : Number(game.home?.score || 0);
           const won = teamScore > oppScore;
+
+          if (ts.liveGame) {
+            ts.liveGame = null;
+            fixes++;
+          }
           if (!won && ts.status !== "eliminated") {
             console.log(`[MM Pool] Reconcile fix: ${teamName} should be eliminated`);
-            ts.status = "eliminated"; ts.liveGame = null; fixes++;
+            ts.status = "eliminated";
+            fixes++;
           }
-          if (won && ts.liveGame) { ts.liveGame = null; fixes++; }
         }
+
         for (const [playerKey, truth] of Object.entries(truthMap)) {
           const ps = state.players[playerKey];
           if (!ps) continue;
-          const ts = state.teams[truth.team];
-          const gp = ts ? ts.gamesPlayed || 0 : 0;
-          const completed = ps.completedPts || [];
-          const teamPlayed = gp > 0 || ts?.status === "eliminated";
-          if (teamPlayed && completed.length === 0) {
-            console.log(`[MM Pool] Reconcile fix: ${playerKey} missing pts, adding ${truth.pts}`);
-            ps.completedPts = [truth.pts]; ps.livePts = 0; fixes++;
-          } else if (teamPlayed && completed.length === 1 && completed[0] !== truth.pts && gp <= 1) {
-            console.log(`[MM Pool] Reconcile fix: ${playerKey} had ${completed[0]}, should be ${truth.pts}`);
-            ps.completedPts = [truth.pts]; ps.livePts = 0; fixes++;
+
+          if (!Array.isArray(ps.completedPts)) ps.completedPts = [];
+          const roundIdx = getFinalRoundIndex(truth.team, game);
+          while (ps.completedPts.length <= roundIdx) ps.completedPts.push(null);
+
+          if (ps.completedPts[roundIdx] !== truth.pts) {
+            console.log(`[MM Pool] Reconcile fix: ${playerKey} round ${roundIdx + 1} = ${truth.pts}`);
+            ps.completedPts[roundIdx] = truth.pts;
+            fixes++;
           }
-          if (ps.livePts > 0 && !ts?.liveGame) { ps.livePts = 0; fixes++; }
+          if (ps.livePts !== 0) {
+            ps.livePts = 0;
+            fixes++;
+          }
         }
-      } catch(e) { console.warn(`[MM Pool] Reconcile: box score ${game.id} failed:`, e.message); }
+      } catch (e) {
+        console.warn(`[MM Pool] Reconcile: box score ${game.id} failed:`, e.message);
+      }
     }
+
     if (fixes > 0) {
       console.log(`[MM Pool] Reconciliation: ${fixes} fixes applied`);
-      saveState(); pushStateToWorker(); render();
+      saveState();
+      pushStateToWorker();
+      render();
     } else {
       console.log("[MM Pool] Reconciliation: all scores verified");
     }
-  } catch(e) { console.warn("[MM Pool] Reconciliation failed:", e.message); }
+  } catch (e) {
+    console.warn("[MM Pool] Reconciliation failed:", e.message);
+  }
 }
 
 async function fetchESPNScores() {
   try {
-    const allGames = [];
-
-    // Fetch tournament scoreboard WITHOUT date (catches most games)
-    try {
-      const resp = await fetch(`${WORKER_URL}/scoreboard?_t=${Date.now()}`, {
-        signal: AbortSignal.timeout(8000)
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data.games && data.games.length > 0) {
-          console.log(`[MM Pool] Tournament scoreboard: ${data.games.length} games`);
-          allGames.push(...data.games);
-        }
-      }
-    } catch(e) { console.warn(`[MM Pool] Tournament scoreboard failed:`, e.message); }
-
-    // ALWAYS also fetch today + yesterday (catches games the dateless endpoint misses)
-    const today = new Date();
-    const yesterday = new Date(today.getTime() - 24*60*60*1000);
-    const fmt = d => d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
-    for (const dateStr of [fmt(today), fmt(yesterday)]) {
-      try {
-        const resp = await fetch(`${WORKER_URL}/scoreboard?date=${dateStr}&_t=${Date.now()}`, {
-          signal: AbortSignal.timeout(8000)
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data.games && data.games.length > 0) {
-            console.log(`[MM Pool] Date ${dateStr}: ${data.games.length} games`);
-            allGames.push(...data.games);
-          }
-        }
-      } catch(e) { console.warn(`[MM Pool] Scoreboard ${dateStr} failed:`, e.message); }
-    }
-
-    if (allGames.length === 0) {
+    const games = await collectScoreboardGames("[MM Pool]");
+    if (games.length === 0) {
       console.warn("[MM Pool] No games found from any source");
       updateLiveIndicator(false, true);
       return true; // Worker is reachable, just no games
     }
 
-    // Deduplicate by game id
-    const seen = new Set();
-    const games = allGames.filter(g => { if (seen.has(g.id)) return false; seen.add(g.id); return true; });
-    console.log(`[MM Pool] Processing ${games.length} unique games`);
-
     let hasLive = false;
     const liveGameIds = [];
     const finalGameIds = [];
-    const finalizedTeams = new Set();
+    const finalGameById = new Map();
     const teamsSeenInGames = new Set();
 
     // Track which games we've already finalized to avoid double-counting
     if (!state._finalizedGameIds) state._finalizedGameIds = [];
 
     for (const game of games) {
-      const homeName = resolveESPNTeam(game.home.name, game.home.abbrev);
-      const awayName = resolveESPNTeam(game.away.name, game.away.abbrev);
+      const homeName = resolveESPNTeam(game.home?.name, game.home?.abbrev);
+      const awayName = resolveESPNTeam(game.away?.name, game.away?.abbrev);
       if (homeName) teamsSeenInGames.add(homeName);
       if (awayName) teamsSeenInGames.add(awayName);
-      const statusType = game.status.type || "";
-      const isFinal = statusType === "STATUS_FINAL" || game.status.completed;
+
+      const statusType = game.status?.type || "";
+      const isFinal = statusType === "STATUS_FINAL" || game.status?.completed;
       const isScheduled = statusType === "STATUS_SCHEDULED" || statusType === "STATUS_POSTPONED" || statusType === "";
       const isLive = !isFinal && !isScheduled; // Halftime, end of period, delays, etc. are all "live"
-      const minRem = getMinutesRemaining(game.status);
-      if (isLive) console.log(`[MM Pool] Live game: ${game.home.name} vs ${game.away.name} (status: ${statusType}, ${minRem.toFixed(1)}m rem)`);
+      const minRem = getMinutesRemaining(game.status || {});
+      if (isLive) console.log(`[MM Pool] Live game: ${game.home?.name} vs ${game.away?.name} (status: ${statusType}, ${minRem.toFixed(1)}m rem)`);
 
       const hasOurTeam = (name) => name && state.teams[name] &&
         PLAYERS_DEFAULT.some(p => {
@@ -1286,9 +1345,9 @@ async function fetchESPNScores() {
         if (!teamName || !state.teams[teamName]) continue;
         const ts = state.teams[teamName];
 
-        const teamScore = isHome ? game.home.score : game.away.score;
-        const oppScore = isHome ? game.away.score : game.home.score;
-        const oppName = isHome ? (awayName || game.away.name) : (homeName || game.home.name);
+        const teamScore = isHome ? Number(game.home?.score || 0) : Number(game.away?.score || 0);
+        const oppScore = isHome ? Number(game.away?.score || 0) : Number(game.home?.score || 0);
+        const oppName = isHome ? (awayName || game.away?.name) : (homeName || game.home?.name);
 
         if (isLive) {
           if (ts.status === "eliminated") continue;
@@ -1312,18 +1371,16 @@ async function fetchESPNScores() {
           if (hasOurTeam(teamName)) liveGameIds.push(game.id);
 
         } else if (isFinal) {
-          // ALWAYS clear liveGame when we see a final — even if already finalized
           if (ts.liveGame) {
             console.log(`[MM Pool] Clearing liveGame for ${teamName} (game final)`);
             ts.liveGame = null;
           }
 
-          const finalKey = game.id + "_" + teamName;
-          const alreadyFinalized = state._finalizedGameIds.includes(finalKey);
+          const finalizedKey = game.id + "_" + teamName;
+          const alreadyFinalized = state._finalizedGameIds.includes(finalizedKey);
 
           if (!alreadyFinalized) {
             const won = teamScore > oppScore;
-
             if (ts.status !== "eliminated") {
               if (won) {
                 ts.gamesPlayed = (ts.gamesPlayed || 0) + 1;
@@ -1331,32 +1388,27 @@ async function fetchESPNScores() {
                 ts.status = "eliminated";
               }
             }
-
-            state._finalizedGameIds.push(finalKey);
+            state._finalizedGameIds.push(finalizedKey);
           }
 
-          // Always queue our tracked teams for final box-score reconciliation,
-          // even if this final was already processed in a previous refresh.
-          // This lets later refreshes backfill missing player points from earlier today.
+          // CRITICAL: always queue tracked final teams for box-score reconciliation,
+          // even if the game/team was finalized in a prior refresh or synced from KV.
           if (hasOurTeam(teamName)) {
-            finalizedTeams.add(teamName);
             finalGameIds.push(game.id);
+            finalGameById.set(game.id, game);
           }
         }
       }
     }
 
     // SAVE scoreboard-level updates immediately (team scores, statuses, win probs)
-    // This ensures team-level data persists even if box score fetches fail
     saveState();
     render();
 
-    // Fetch box scores: LIVE GAMES FIRST (priority), then finals
     const liveUnique = [...new Set(liveGameIds)];
     const finalUnique = [...new Set(finalGameIds)];
     console.log(`[MM Pool] Live games: ${liveUnique.length}, Final games: ${finalUnique.length}`);
 
-    // Helper: fetch one box score and update player points
     async function fetchAndApplyBoxScore(gameId, isFinalGame) {
       try {
         const bResp = await fetch(`${WORKER_URL}/boxscore?gameId=${gameId}&_t=${Date.now()}`, {
@@ -1366,13 +1418,16 @@ async function fetchESPNScores() {
           console.warn(`[MM Pool] Box score ${gameId} returned ${bResp.status}`);
           return;
         }
+
         const bData = await bResp.json();
         if (!bData.players || bData.players.length === 0) {
           console.warn(`[MM Pool] Box score ${gameId}: no players in response`);
           return;
         }
 
+        const sourceGame = finalGameById.get(gameId);
         let matched = 0;
+
         for (const ps of bData.players) {
           const teamName = resolveESPNTeam(ps.team, ps.abbrev);
           if (!teamName) continue;
@@ -1382,44 +1437,33 @@ async function fetchESPNScores() {
           matched++;
           const playerState = state.players[ourPlayerKey];
 
-          if (isFinalGame && finalizedTeams.has(teamName)) {
+          if (isFinalGame) {
             if (!Array.isArray(playerState.completedPts)) playerState.completedPts = [];
-            const teamGP = state.teams[teamName]?.gamesPlayed || 0;
-            const finalIdx = Math.max(0, teamGP - 1);
-            if (teamGP > 0) {
-              const prev = playerState.completedPts[finalIdx];
-              playerState.completedPts[finalIdx] = ps.pts;
-              if (playerState.completedPts.length > teamGP) {
-                playerState.completedPts = playerState.completedPts.slice(0, teamGP);
-              }
-              if (prev !== ps.pts) {
-                console.log(`[MM Pool] Final sync: ${ourPlayerKey} round ${teamGP} → ${ps.pts}pts`);
-              }
-            }
+            const roundIdx = getFinalRoundIndex(teamName, sourceGame);
+            while (playerState.completedPts.length <= roundIdx) playerState.completedPts.push(null);
+            playerState.completedPts[roundIdx] = ps.pts;
             playerState.livePts = 0;
-          } else if (!isFinalGame) {
+            console.log(`[MM Pool] Final: ${ourPlayerKey} → round ${roundIdx + 1} = ${ps.pts}pts`);
+          } else {
             console.log(`[MM Pool] Live: ${ourPlayerKey} → ${ps.pts}pts`);
             playerState.livePts = ps.pts;
           }
         }
+
         console.log(`[MM Pool] Box score ${gameId}: ${bData.players.length} players, ${matched} matched to pool`);
       } catch (e) {
         console.warn(`[MM Pool] Box score ${gameId} failed:`, e.message);
       }
     }
 
-    // Fetch live box scores first (these are time-sensitive)
     for (const gid of liveUnique) {
       await fetchAndApplyBoxScore(gid, false);
     }
 
-    // Then fetch final box scores (one-time operation)
     for (const gid of finalUnique) {
       await fetchAndApplyBoxScore(gid, true);
     }
 
-    // CLEANUP: Clear stale liveGame for teams that aren't in ANY scoreboard response
-    // This handles the case where a game finished but the scoreboard date rolled over
     for (const [teamName, ts] of Object.entries(state.teams)) {
       if (ts.liveGame && !teamsSeenInGames.has(teamName)) {
         console.log(`[MM Pool] Clearing stale liveGame for ${teamName} (not in any scoreboard)`);
@@ -1427,32 +1471,25 @@ async function fetchESPNScores() {
       }
     }
 
-    // CLEANUP: Clear stale livePts for ALL players on finalized/eliminated teams
-    // This catches cases where a player had livePts from a previous cycle but
-    // wasn't matched in the box score (name mismatch, timeout, etc.)
     for (const p of PLAYERS_DEFAULT) {
       const sw = state.playerSwaps[p.name];
       const teamName = sw ? sw.newTeam : p.team;
       const ts = state.teams[teamName];
       const ps = state.players[p.name];
-      if (ps && ts && (ts.status === "eliminated" || (!ts.liveGame && ps.livePts > 0))) {
-        // Team is not in a live game but player has livePts — stale data
-        if (!ts.liveGame && ps.livePts > 0) {
-          console.log(`[MM Pool] Clearing stale livePts for ${p.name}: ${ps.livePts} → 0`);
-          ps.livePts = 0;
-        }
+      if (ps && ts && !ts.liveGame && ps.livePts > 0) {
+        console.log(`[MM Pool] Clearing stale livePts for ${p.name}: ${ps.livePts} → 0`);
+        ps.livePts = 0;
       }
     }
 
-    // Trim _finalizedGameIds to prevent unbounded growth
     if (state._finalizedGameIds.length > 200) {
       state._finalizedGameIds = state._finalizedGameIds.slice(-100);
     }
 
     lastESPNFetch = new Date();
     saveState();
-    pushStateToWorker(); // Auto-push to KV if admin
-    reconcileScores(); // Hourly verification (internally throttled)
+    pushStateToWorker();
+    reconcileScores();
     render();
     updateLiveIndicator(hasLive, true);
     return true;
@@ -1463,8 +1500,6 @@ async function fetchESPNScores() {
     return false;
   }
 }
-
-
 
 function updateLiveIndicator(hasLive, connected) {
   const el = document.getElementById("liveIndicator");
