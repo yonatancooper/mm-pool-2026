@@ -3,7 +3,7 @@
   "teams": {
     "Duke": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "Siena": {
@@ -17,32 +17,32 @@
       "liveGame": null
     },
     "TCU": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
     "St. John's": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Northern Iowa": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
     "Kansas": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Cal. Baptist": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
     "Louisville": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
@@ -53,7 +53,7 @@
     },
     "Michigan State": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "North Dakota State": {
@@ -63,27 +63,27 @@
     },
     "UCLA": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "UCF": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
     "Connecticut": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Furman": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
     "Michigan": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "UMBC": {
@@ -102,37 +102,37 @@
       "liveGame": null
     },
     "Saint Louis": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
     "Texas Tech": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Akron": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
     "Alabama": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Hofstra": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
     "Tennessee": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Miami (OH)": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
@@ -143,37 +143,37 @@
     },
     "Virginia": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Wright State": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
     "Kentucky": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Santa Clara": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
     "Iowa State": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Tennessee State": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
     "Arizona": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "LIU": {
@@ -182,13 +182,13 @@
       "liveGame": null
     },
     "Villanova": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
     "Utah State": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Wisconsin": {
@@ -197,13 +197,13 @@
       "liveGame": null
     },
     "High Point": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
     "Arkansas": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "Hawaii": {
@@ -218,7 +218,7 @@
     },
     "Texas": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "NC State": {
@@ -227,7 +227,7 @@
       "liveGame": null
     },
     "Gonzaga": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
@@ -238,31 +238,31 @@
     },
     "Miami (Fla.)": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Missouri": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
     "Purdue": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Queens": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
     "Florida": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Prairie View": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
@@ -272,17 +272,17 @@
       "liveGame": null
     },
     "Clemson": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 0,
       "liveGame": null
     },
     "Iowa": {
       "status": "active",
-      "gamesPlayed": 0,
+      "gamesPlayed": 1,
       "liveGame": null
     },
     "Vanderbilt": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
@@ -293,7 +293,7 @@
     },
     "Nebraska": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "Troy": {
@@ -307,13 +307,13 @@
       "liveGame": null
     },
     "VCU": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
     "Illinois": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "Penn": {
@@ -327,13 +327,13 @@
       "liveGame": null
     },
     "Texas A&M": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
     "Houston": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "Idaho": {
@@ -345,56 +345,73 @@
   "players": {
     "Yaxel Lendeborg": {
       "completedPts": [
-        9
+        9,
+        25
       ],
       "livePts": 0
     },
     "Alex Condon": {
-      "completedPts": [],
-      "livePts": 0
-    },
-    "Elliot Cadeau": {
-      "completedPts": [
-        5
-      ],
-      "livePts": 0
-    },
-    "David Mirkovic": {
-      "completedPts": [
-        29
-      ],
-      "livePts": 0
-    },
-    "Kylan Boswell": {
       "completedPts": [
         13
       ],
       "livePts": 0
     },
+    "Elliot Cadeau": {
+      "completedPts": [
+        5,
+        12
+      ],
+      "livePts": 0
+    },
+    "David Mirkovic": {
+      "completedPts": [
+        29,
+        7
+      ],
+      "livePts": 0
+    },
+    "Kylan Boswell": {
+      "completedPts": [
+        13,
+        12
+      ],
+      "livePts": 0
+    },
     "Trey Kaufman-Renn": {
-      "completedPts": [],
+      "completedPts": [
+        25
+      ],
       "livePts": 0
     },
     "Thomas Haugh": {
-      "completedPts": [],
+      "completedPts": [
+        14
+      ],
       "livePts": 0
     },
     "Aday Mara": {
       "completedPts": [
-        19
+        19,
+        16
       ],
       "livePts": 0
     },
     "Braden Smith": {
-      "completedPts": [],
+      "completedPts": [
+        26
+      ],
       "livePts": 0
     },
     "Malik Thomas": {
-      "completedPts": [],
+      "completedPts": [
+        11
+      ],
       "livePts": 0
     },
     "Alex Karaban": {
-      "completedPts": [],
+      "completedPts": [
+        22
+      ],
       "livePts": 0
     },
     "John Blackwell": {
@@ -405,53 +422,71 @@
     },
     "Graham Ike": {
       "completedPts": [
-        19
+        25,
+        25
       ],
       "livePts": 0
     },
     "Labaron Philon": {
-      "completedPts": [],
+      "completedPts": [
+        29
+      ],
       "livePts": 0
     },
     "Xaivian Lee": {
-      "completedPts": [],
+      "completedPts": [
+        10
+      ],
       "livePts": 0
     },
     "Darryn Peterson": {
-      "completedPts": [],
+      "completedPts": [
+        28
+      ],
       "livePts": 0
     },
     "Joseph Tugler": {
       "completedPts": [
-        13
+        13,
+        6
       ],
       "livePts": 0
     },
     "Christian Anderson": {
-      "completedPts": [],
-      "livePts": 0
-    },
-    "Kingston Flemings": {
       "completedPts": [
         18
       ],
       "livePts": 0
     },
+    "Kingston Flemings": {
+      "completedPts": [
+        18,
+        9
+      ],
+      "livePts": 0
+    },
     "Milan Momcilovic": {
-      "completedPts": [],
+      "completedPts": [
+        17
+      ],
       "livePts": 0
     },
     "Tarris Reed Jr.": {
-      "completedPts": [],
+      "completedPts": [
+        31
+      ],
       "livePts": 0
     },
     "Ja'Kobi Gillespie": {
-      "completedPts": [],
+      "completedPts": [
+        29
+      ],
       "livePts": 0
     },
     "Tyon Grant-Foster": {
       "completedPts": [
-        9
+        7,
+        7
       ],
       "livePts": 0
     },
@@ -462,100 +497,131 @@
       "livePts": 0
     },
     "Jaden Bradley": {
-      "completedPts": [],
-      "livePts": 0
-    },
-    "Joshua Jefferson": {
-      "completedPts": [],
-      "livePts": 0
-    },
-    "Coen Carr": {
-      "completedPts": [
-        17
-      ],
-      "livePts": 0
-    },
-    "Cayden Boozer": {
-      "completedPts": [
-        19
-      ],
-      "livePts": 0
-    },
-    "Milos Uzan": {
-      "completedPts": [
-        12
-      ],
-      "livePts": 0
-    },
-    "Jaxon Kohler": {
-      "completedPts": [
-        12
-      ],
-      "livePts": 0
-    },
-    "Koa Peat": {
-      "completedPts": [],
-      "livePts": 0
-    },
-    "Patrick Ngongba": {
-      "completedPts": [],
-      "livePts": 0
-    },
-    "Jeremy Fears Jr.": {
       "completedPts": [
         7
       ],
       "livePts": 0
     },
+    "Joshua Jefferson": {
+      "completedPts": [
+        2
+      ],
+      "livePts": 0
+    },
+    "Coen Carr": {
+      "completedPts": [
+        17,
+        21
+      ],
+      "livePts": 0
+    },
+    "Cayden Boozer": {
+      "completedPts": [
+        19,
+        9
+      ],
+      "livePts": 0
+    },
+    "Milos Uzan": {
+      "completedPts": [
+        12,
+        15
+      ],
+      "livePts": 0
+    },
+    "Jaxon Kohler": {
+      "completedPts": [
+        12,
+        10
+      ],
+      "livePts": 0
+    },
+    "Koa Peat": {
+      "completedPts": [
+        15
+      ],
+      "livePts": 0
+    },
+    "Patrick Ngongba": {
+      "completedPts": [
+        9
+      ],
+      "livePts": 0
+    },
+    "Jeremy Fears Jr.": {
+      "completedPts": [
+        7,
+        12
+      ],
+      "livePts": 0
+    },
     "Ivan Kharchenkov": {
-      "completedPts": [],
+      "completedPts": [
+        14
+      ],
       "livePts": 0
     },
     "Tamin Lipsey": {
-      "completedPts": [],
+      "completedPts": [
+        3
+      ],
       "livePts": 0
     },
     "Anthony Dell'Orso": {
-      "completedPts": [],
+      "completedPts": [
+        8
+      ],
       "livePts": 0
     },
     "Isaiah Evans": {
       "completedPts": [
-        16
+        16,
+        17
       ],
       "livePts": 0
     },
     "Morez Johnson Jr.": {
       "completedPts": [
-        21
+        21,
+        15
       ],
       "livePts": 0
     },
     "Motiejus Krivas": {
-      "completedPts": [],
+      "completedPts": [
+        9
+      ],
       "livePts": 0
     },
     "Fletcher Loyer": {
-      "completedPts": [],
+      "completedPts": [
+        14
+      ],
       "livePts": 0
     },
     "Duke Miles": {
       "completedPts": [
-        13
+        13,
+        9
       ],
       "livePts": 0
     },
     "Rueben Chinyelu": {
-      "completedPts": [],
+      "completedPts": [
+        14
+      ],
       "livePts": 0
     },
     "Brayden Burries": {
-      "completedPts": [],
+      "completedPts": [
+        18
+      ],
       "livePts": 0
     },
     "Emanuel Sharp": {
       "completedPts": [
-        16
+        16,
+        18
       ],
       "livePts": 0
     },
@@ -566,12 +632,15 @@
       "livePts": 0
     },
     "Zuby Ejiofor": {
-      "completedPts": [],
+      "completedPts": [
+        14
+      ],
       "livePts": 0
     },
     "Meleek Thomas": {
       "completedPts": [
-        21
+        21,
+        19
       ],
       "livePts": 0
     },
@@ -583,18 +652,22 @@
     },
     "Cameron Boozer": {
       "completedPts": [
-        22
+        22,
+        19
       ],
       "livePts": 0
     },
     "Tyler Tanner": {
       "completedPts": [
-        26
+        26,
+        27
       ],
       "livePts": 0
     },
     "Boogie Fland": {
-      "completedPts": [],
+      "completedPts": [
+        16
+      ],
       "livePts": 0
     },
     "Bruce Thornton": {
@@ -604,7 +677,9 @@
       "livePts": 0
     },
     "Tavari Johnson": {
-      "completedPts": [],
+      "completedPts": [
+        4
+      ],
       "livePts": 0
     },
     "Henri Veesaar": {
@@ -615,34 +690,42 @@
     },
     "Darius Acuff Jr.": {
       "completedPts": [
-        24
+        24,
+        36
       ],
       "livePts": 0
     },
     "Keaton Wagler": {
       "completedPts": [
-        18
+        18,
+        14
       ],
       "livePts": 0
     },
     "Solomon Ball": {
-      "completedPts": [],
-      "livePts": 0
-    },
-    "Andrej Stojakovic": {
       "completedPts": [
         9
       ],
       "livePts": 0
     },
+    "Andrej Stojakovic": {
+      "completedPts": [
+        9,
+        21
+      ],
+      "livePts": 0
+    },
     "Pryce Sandfort": {
       "completedPts": [
-        23
+        23,
+        15
       ],
       "livePts": 0
     },
     "Thijs De Ridder": {
-      "completedPts": [],
+      "completedPts": [
+        10
+      ],
       "livePts": 0
     }
   },
@@ -654,7 +737,7 @@
       "newPpg": 10.3
     }
   },
-  "lastUpdated": "2026-03-20T13:35:48.429Z",
+  "lastUpdated": "2026-03-22T15:35:16.589Z",
   "_finalizedGameIds": [
     "401856489_Nebraska",
     "401856489_Troy",
@@ -681,11 +764,672 @@
     "401856484_Texas",
     "401856491_Illinois",
     "401856491_Penn",
-    "401856493_Houston",
-    "401856493_Idaho",
     "401856485_Gonzaga",
     "401856485_Kennesaw State",
+    "401856493_Houston",
+    "401856493_Idaho",
     "401856487_Georgia",
-    "401856487_Saint Louis"
-  ]
+    "401856487_Saint Louis",
+    "401856525_Kentucky",
+    "401856525_Santa Clara",
+    "401856520_Texas Tech",
+    "401856520_Akron",
+    "401856529_Arizona",
+    "401856526_Virginia",
+    "401856526_Wright State",
+    "401856524_Iowa State",
+    "401856524_Tennessee State",
+    "401856521_Alabama",
+    "401856521_Hofstra",
+    "401856528_Villanova",
+    "401856528_Utah State",
+    "401856527_Tennessee",
+    "401856527_Miami (OH)",
+    "401856522_Clemson",
+    "401856522_Iowa",
+    "401856519_Purdue",
+    "401856519_Queens",
+    "401856494_St. John's",
+    "401856494_Northern Iowa",
+    "401856496_UCLA",
+    "401856496_UCF",
+    "401856518_Miami (Fla.)",
+    "401856518_Missouri",
+    "401856523_Florida",
+    "401856523_Prairie View",
+    "401856495_Kansas",
+    "401856495_Cal. Baptist",
+    "401856497_Connecticut",
+    "401856497_Furman",
+    "401856532_Michigan",
+    "401856532_Saint Louis",
+    "401856530_Duke",
+    "401856530_TCU",
+    "401856535_Houston",
+    "401856535_Texas A&M",
+    "401856531_Michigan State",
+    "401856531_Louisville",
+    "401856537_Gonzaga",
+    "401856537_Texas",
+    "401856533_Illinois",
+    "401856533_VCU",
+    "401856534_Nebraska",
+    "401856534_Vanderbilt",
+    "401856536_Arkansas",
+    "401856536_High Point"
+  ],
+  "probBase": {
+    "Duke": [
+      1,
+      1,
+      1,
+      0.7321000000000001,
+      0.54681,
+      0.31511,
+      0.17643
+    ],
+    "Siena": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Ohio State": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "TCU": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "St. John's": [
+      1,
+      1,
+      0.61672,
+      0.19224000000000002,
+      0.11442000000000001,
+      0.04709000000000001,
+      0.01821
+    ],
+    "Northern Iowa": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Kansas": [
+      1,
+      1,
+      0.38328,
+      0.07566,
+      0.033100000000000004,
+      0.01012,
+      0.0034000000000000002
+    ],
+    "Cal. Baptist": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Louisville": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "South Florida": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Michigan State": [
+      1,
+      1,
+      1,
+      0.53071,
+      0.16499000000000003,
+      0.06139000000000001,
+      0.02237
+    ],
+    "North Dakota State": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "UCLA": [
+      1,
+      1,
+      0.29645000000000005,
+      0.11147000000000001,
+      0.024730000000000002,
+      0.0068000000000000005,
+      0.0019000000000000002
+    ],
+    "UCF": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Connecticut": [
+      1,
+      1,
+      0.70355,
+      0.35782,
+      0.11595000000000001,
+      0.04148,
+      0.01455
+    ],
+    "Furman": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Florida": [
+      1,
+      1,
+      0.8655900000000001,
+      0.6613600000000001,
+      0.34308000000000005,
+      0.19507000000000002,
+      0.10320000000000001
+    ],
+    "Prairie View": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Lehigh": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Clemson": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Iowa": [
+      1,
+      1,
+      0.13441,
+      0.05509000000000001,
+      0.01229,
+      0.00371,
+      0.001
+    ],
+    "Vanderbilt": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "McNeese": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Nebraska": [
+      1,
+      1,
+      1,
+      0.28355,
+      0.07912000000000001,
+      0.02706,
+      0.008490000000000001
+    ],
+    "Troy": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "North Carolina": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "VCU": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Illinois": [
+      1,
+      1,
+      1,
+      0.38291000000000003,
+      0.19417,
+      0.09859000000000001,
+      0.04653
+    ],
+    "Penn": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Saint Mary's": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Texas A&M": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Houston": [
+      1,
+      1,
+      1,
+      0.61709,
+      0.37134,
+      0.19358,
+      0.09313
+    ],
+    "Idaho": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Arizona": [
+      1,
+      1,
+      0.8902100000000001,
+      0.7290500000000001,
+      0.55598,
+      0.29525,
+      0.16033
+    ],
+    "LIU": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Villanova": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Utah State": [
+      1,
+      1,
+      0.10979000000000001,
+      0.04553,
+      0.018400000000000003,
+      0.0036500000000000005,
+      0.0007800000000000001
+    ],
+    "Wisconsin": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "High Point": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Arkansas": [
+      1,
+      1,
+      1,
+      0.22542,
+      0.1092,
+      0.03121,
+      0.00952
+    ],
+    "Hawaii": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "BYU": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Texas": [
+      1,
+      1,
+      1,
+      0.27058000000000004,
+      0.050050000000000004,
+      0.009170000000000001,
+      0.0018100000000000002
+    ],
+    "NC State": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Gonzaga": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Kennesaw State": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Miami (Fla.)": [
+      1,
+      1,
+      0.22482000000000002,
+      0.12652000000000002,
+      0.026680000000000002,
+      0.00574,
+      0.0012200000000000002
+    ],
+    "Missouri": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Purdue": [
+      1,
+      1,
+      0.7751800000000001,
+      0.6029000000000001,
+      0.23969000000000001,
+      0.10306000000000001,
+      0.04691000000000001
+    ],
+    "Queens": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Michigan": [
+      1,
+      1,
+      1,
+      0.8253800000000001,
+      0.57193,
+      0.35834000000000005,
+      0.20676000000000003
+    ],
+    "UMBC": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Howard": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Georgia": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Saint Louis": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Texas Tech": [
+      1,
+      1,
+      0.43423000000000006,
+      0.057260000000000005,
+      0.017650000000000002,
+      0.00464,
+      0.00099
+    ],
+    "Akron": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Alabama": [
+      1,
+      1,
+      0.56577,
+      0.11736,
+      0.05127,
+      0.019790000000000002,
+      0.00666
+    ],
+    "Hofstra": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Tennessee": [
+      1,
+      1,
+      0.48796000000000006,
+      0.18246,
+      0.0517,
+      0.019260000000000003,
+      0.00683
+    ],
+    "Miami (OH)": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "SMU": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Virginia": [
+      1,
+      1,
+      0.51204,
+      0.18854,
+      0.05133000000000001,
+      0.01836,
+      0.006
+    ],
+    "Wright State": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Kentucky": [
+      1,
+      1,
+      0.29736,
+      0.13403,
+      0.030230000000000003,
+      0.009420000000000001,
+      0.00302
+    ],
+    "Santa Clara": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Iowa State": [
+      1,
+      1,
+      0.70264,
+      0.49497,
+      0.22589,
+      0.12211000000000001,
+      0.059960000000000006
+    ],
+    "Tennessee State": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  }
 }
