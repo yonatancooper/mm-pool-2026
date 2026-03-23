@@ -564,38 +564,68 @@ function localStateHasSubstance(){
   return false;
 }
 
+function getStateTs(s){
+  if(!s||!s.lastUpdated)return 0;
+  const ts=new Date(s.lastUpdated).getTime();
+  return Number.isFinite(ts)?ts:0;
+}
+
+async function fetchStateCandidate(label,url){
+  try{
+    const r=await fetch(url,{signal:AbortSignal.timeout(5000),cache:"no-store"});
+    if(!r.ok)throw new Error(`HTTP ${r.status}`);
+    const data=await r.json();
+    const ts=getStateTs(data);
+    if(data&&data.version===2&&ts){
+      console.log(`[MM Pool] Sync: ${label} candidate ts=${data.lastUpdated}`);
+      return {label,data,ts};
+    }
+    console.warn(`[MM Pool] Sync: ${label} returned invalid state payload`);
+  }catch(e){
+    console.warn(`[MM Pool] ${label} failed:`,e.message);
+  }
+  return null;
+}
+
 async function fetchSharedState(){
   try{
     document.getElementById("syncStatus").textContent="Syncing...";
-    let remote=null;
-    try{
-      const r=await fetch(`${WORKER_URL}/state`,{signal:AbortSignal.timeout(5000)});
-      if(r.ok){remote=await r.json();console.log("[MM Pool] Sync: Got state from Worker KV");}
-    }catch(e){console.warn("[MM Pool] Worker KV failed:",e.message);}
-    if(!remote){
-      try{
-        const r=await fetch(RAW_URL+"?t="+Date.now(),{signal:AbortSignal.timeout(5000)});
-        if(r.ok){remote=await r.json();console.log("[MM Pool] Sync: Fell back to GitHub");}
-      }catch(e){console.warn("[MM Pool] GitHub fallback failed:",e.message);}
-    }
-    if(remote&&remote.version===2&&remote.lastUpdated){
+    const nonce=Date.now();
+    const [workerCandidate, githubCandidate] = await Promise.all([
+      fetchStateCandidate("Worker KV", `${WORKER_URL}/state?t=${nonce}`),
+      fetchStateCandidate("GitHub", `${RAW_URL}?t=${nonce}`)
+    ]);
+
+    const candidates=[workerCandidate, githubCandidate].filter(Boolean).sort((a,b)=>b.ts-a.ts);
+    const remote=candidates[0]||null;
+    const remoteLabel=remote?remote.label:null;
+    const remoteTs=remote?remote.ts:0;
+    const localTs=getStateTs(state);
+
+    if(remote){
       if(!IS_ADMIN){
-        // VIEWER: Always take remote unconditionally — KV is the single source of truth
-        console.log("[MM Pool] Sync: Viewer taking remote state unconditionally");
-        state=ensure(remote);localStorage.setItem("mm2026_v2",JSON.stringify(state));render();
+        if(remoteTs>=localTs){
+          console.log(`[MM Pool] Sync: Viewer taking ${remoteLabel} ts=${remote.data.lastUpdated}`);
+          state=ensure(remote.data);
+          localStorage.setItem("mm2026_v2",JSON.stringify(state));
+          render();
+        }else{
+          console.log(`[MM Pool] Sync: Viewer keeping newer local ts=${state.lastUpdated}`);
+        }
       }else{
-        // ADMIN: Use timestamp comparison (admin is the authority, only take if remote is actually newer)
-        const rt=new Date(remote.lastUpdated).getTime();
-        const lt=state.lastUpdated?new Date(state.lastUpdated).getTime():0;
-        if(rt>lt){
-          console.log("[MM Pool] Sync: Admin taking newer remote");
-          state=ensure(remote);saveState();render();
+        if(remoteTs>localTs){
+          console.log(`[MM Pool] Sync: Admin taking newer ${remoteLabel} ts=${remote.data.lastUpdated}`);
+          state=ensure(remote.data);
+          saveState();
+          render();
         }else{
           console.log("[MM Pool] Sync: Admin local is authoritative");
         }
       }
+      document.getElementById("syncStatus").textContent=(IS_ADMIN?"👑 Admin · ":"")+`Synced ${new Date().toLocaleTimeString()} · ${remoteLabel}`;
+    }else{
+      document.getElementById("syncStatus").textContent="Local mode";
     }
-    document.getElementById("syncStatus").textContent=(IS_ADMIN?"👑 Admin · ":"")+"Synced "+new Date().toLocaleTimeString();
   }catch(e){
     console.warn("[MM Pool] Sync failed:",e.message);
     document.getElementById("syncStatus").textContent="Local mode";
@@ -1086,56 +1116,68 @@ function resolveESPNTeam(displayName, abbrev) {
   return bestMatch;
 }
 
-function matchPlayer(espnName, teamName) {
-  const teamPlayers = PLAYERS_DEFAULT.filter(p => {
+function normalizePlayerName(name) {
+  return String(name || "")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[’'`.\-,]/g, " ")
+    .replace(/\s+(jr|sr|ii|iii|iv|v)\s*$/i, "")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getActivePlayerName(p) {
+  const sw = state.playerSwaps[p.name];
+  return sw ? sw.newName : p.name;
+}
+
+function getTrackedPlayersForTeam(teamName) {
+  return PLAYERS_DEFAULT.filter(p => {
     const sw = state.playerSwaps[p.name];
     return sw ? sw.newTeam === teamName : p.team === teamName;
   });
+}
+
+function matchPlayer(espnName, teamName) {
+  const teamPlayers = getTrackedPlayersForTeam(teamName);
   if (teamPlayers.length === 0) return null;
 
-  const getActiveName = (p) => {
-    const sw = state.playerSwaps[p.name];
-    return sw ? sw.newName : p.name;
-  };
-
-  // Normalize: strip suffixes, trim, lowercase
-  const normalize = (name) => name.toLowerCase()
-    .replace(/[,.]/g, "") // remove commas and periods
-    .replace(/\s+(jr|sr|ii|iii|iv|v)\s*$/i, "") // strip suffixes
-    .trim();
-
-  const espnNorm = normalize(espnName);
-  const espnParts = espnNorm.split(" ");
+  const espnNorm = normalizePlayerName(espnName);
+  const espnParts = espnNorm.split(" ").filter(Boolean);
   const espnLast = espnParts[espnParts.length - 1];
   const espnFirst = espnParts[0];
 
-  // Tier 1: Direct match (after normalization)
   for (const p of teamPlayers) {
-    if (normalize(getActiveName(p)) === espnNorm) return p.name;
+    if (normalizePlayerName(getActivePlayerName(p)) === espnNorm) return p.name;
   }
 
-  // Tier 2: Last name match (using normalized names, so "Johnson" not "Jr.")
   const lastMatches = teamPlayers.filter(p => {
-    const parts = normalize(getActiveName(p)).split(" ");
+    const parts = normalizePlayerName(getActivePlayerName(p)).split(" ").filter(Boolean);
     return parts[parts.length - 1] === espnLast;
   });
   if (lastMatches.length === 1) return lastMatches[0].name;
 
-  // Tier 3: First + last name match (handles middle name differences)
   if (lastMatches.length > 1) {
     const firstLastMatches = lastMatches.filter(p => {
-      const parts = normalize(getActiveName(p)).split(" ");
+      const parts = normalizePlayerName(getActivePlayerName(p)).split(" ").filter(Boolean);
       return parts[0] === espnFirst;
     });
     if (firstLastMatches.length === 1) return firstLastMatches[0].name;
   }
 
-  // Tier 4: Last name match with shorter names (allows 3+ char last names)
   for (const p of teamPlayers) {
-    const ourNorm = normalize(getActiveName(p));
-    const ourParts = ourNorm.split(" ");
+    const ourNorm = normalizePlayerName(getActivePlayerName(p));
+    const ourParts = ourNorm.split(" ").filter(Boolean);
     const ourLast = ourParts[ourParts.length - 1];
-    if (ourLast === espnLast && ourLast.length > 2) return p.name;
+    if (ourLast === espnLast && ourLast && ourLast.length > 2) return p.name;
+  }
+
+  // Final fallback: exact normalized full-name match anywhere in the pool, but only if unique.
+  const globalExact = PLAYERS_DEFAULT.filter(p => normalizePlayerName(getActivePlayerName(p)) === espnNorm);
+  if (globalExact.length === 1) {
+    console.log(`[MM Pool] Global name fallback: "${espnName}" → ${globalExact[0].name}`);
+    return globalExact[0].name;
   }
 
   console.warn(`[MM Pool] Player not matched: "${espnName}" on ${teamName}`);
@@ -1245,10 +1287,10 @@ function getFinalRoundIndex(teamName, game) {
   return Math.max(0, won ? (wins - 1) : wins);
 }
 
-async function reconcileScores() {
+async function reconcileScores(force = false) {
   if (!IS_ADMIN) return;
   const now = Date.now();
-  if (now - _lastReconcile < RECONCILE_INTERVAL) return;
+  if (!force && now - _lastReconcile < RECONCILE_INTERVAL) return;
   _lastReconcile = now;
 
   console.log("[MM Pool] Reconciliation starting...");
@@ -1356,6 +1398,7 @@ async function fetchESPNScores() {
     const liveGameIds = [];
     const finalGameIds = [];
     const finalGameById = new Map();
+    const finalGameByTeam = new Map();
     const teamsSeenInGames = new Set();
 
     // Track which games we've already finalized to avoid double-counting
@@ -1435,6 +1478,7 @@ async function fetchESPNScores() {
           if (hasOurTeam(teamName)) {
             finalGameIds.push(game.id);
             finalGameById.set(game.id, game);
+            finalGameByTeam.set(teamName, game);
           }
         }
       }
@@ -1446,6 +1490,8 @@ async function fetchESPNScores() {
 
     const liveUnique = [...new Set(liveGameIds)];
     const finalUnique = [...new Set(finalGameIds)];
+    const finalMatchedPlayers = new Set();
+    let needsFinalReconcile = false;
     console.log(`[MM Pool] Live games: ${liveUnique.length}, Final games: ${finalUnique.length}`);
 
     async function fetchAndApplyBoxScore(gameId, isFinalGame) {
@@ -1461,6 +1507,7 @@ async function fetchESPNScores() {
         const bData = await bResp.json();
         if (!bData.players || bData.players.length === 0) {
           console.warn(`[MM Pool] Box score ${gameId}: no players in response`);
+          if (isFinalGame) needsFinalReconcile = true;
           return;
         }
 
@@ -1480,8 +1527,9 @@ async function fetchESPNScores() {
             if (!Array.isArray(playerState.completedPts)) playerState.completedPts = [];
             const roundIdx = getFinalRoundIndex(teamName, sourceGame);
             while (playerState.completedPts.length <= roundIdx) playerState.completedPts.push(null);
-            playerState.completedPts[roundIdx] = ps.pts;
+            playerState.completedPts[roundIdx] = Number(ps.pts) || 0;
             playerState.livePts = 0;
+            finalMatchedPlayers.add(ourPlayerKey);
             console.log(`[MM Pool] Final: ${ourPlayerKey} → round ${roundIdx + 1} = ${ps.pts}pts`);
           } else {
             console.log(`[MM Pool] Live: ${ourPlayerKey} → ${ps.pts}pts`);
@@ -1491,6 +1539,7 @@ async function fetchESPNScores() {
 
         console.log(`[MM Pool] Box score ${gameId}: ${bData.players.length} players, ${matched} matched to pool`);
       } catch (e) {
+        if (isFinalGame) needsFinalReconcile = true;
         console.warn(`[MM Pool] Box score ${gameId} failed:`, e.message);
       }
     }
@@ -1501,6 +1550,31 @@ async function fetchESPNScores() {
 
     for (const gid of finalUnique) {
       await fetchAndApplyBoxScore(gid, true);
+    }
+
+    // Final-game fallback: if a tracked player had live points but the final box score
+    // did not map cleanly this cycle, preserve that last live number in the correct
+    // completed round slot so finished games do not go blank. Forced reconciliation
+    // below will overwrite provisional values with box-score truth when available.
+    for (const p of PLAYERS_DEFAULT) {
+      const sw = state.playerSwaps[p.name];
+      const teamName = sw ? sw.newTeam : p.team;
+      const game = finalGameByTeam.get(teamName);
+      if (!game) continue;
+      const ps = state.players[p.name];
+      if (!ps) continue;
+      const roundIdx = getFinalRoundIndex(teamName, game);
+      if (!Array.isArray(ps.completedPts)) ps.completedPts = [];
+      while (ps.completedPts.length <= roundIdx) ps.completedPts.push(null);
+      const hasFinal = ps.completedPts[roundIdx] != null;
+      if (!hasFinal && (ps.livePts || 0) > 0) {
+        ps.completedPts[roundIdx] = Number(ps.livePts) || 0;
+        console.log(`[MM Pool] Provisional final fallback: ${p.name} → round ${roundIdx + 1} = ${ps.livePts}`);
+        needsFinalReconcile = true;
+      }
+      if (finalMatchedPlayers.has(p.name) || ps.completedPts[roundIdx] != null) {
+        ps.livePts = 0;
+      }
     }
 
     for (const [teamName, ts] of Object.entries(state.teams)) {
@@ -1515,10 +1589,23 @@ async function fetchESPNScores() {
       const teamName = sw ? sw.newTeam : p.team;
       const ts = state.teams[teamName];
       const ps = state.players[p.name];
-      if (ps && ts && !ts.liveGame && ps.livePts > 0) {
-        console.log(`[MM Pool] Clearing stale livePts for ${p.name}: ${ps.livePts} → 0`);
-        ps.livePts = 0;
+      if (!ps || !ts || ts.liveGame || (ps.livePts || 0) <= 0) continue;
+
+      // If this team just finished, do not wipe out the player's last live total unless
+      // we have a completed-round value recorded for that final. This prevents finished
+      // games from disappearing on transient box-score misses.
+      const finalGame = finalGameByTeam.get(teamName);
+      if (finalGame) {
+        const roundIdx = getFinalRoundIndex(teamName, finalGame);
+        const hasFinal = Array.isArray(ps.completedPts) && ps.completedPts[roundIdx] != null;
+        if (!hasFinal) {
+          needsFinalReconcile = true;
+          continue;
+        }
       }
+
+      console.log(`[MM Pool] Clearing stale livePts for ${p.name}: ${ps.livePts} → 0`);
+      ps.livePts = 0;
     }
 
     if (state._finalizedGameIds.length > 200) {
@@ -1528,7 +1615,11 @@ async function fetchESPNScores() {
     lastESPNFetch = new Date();
     saveState();
     pushStateToWorker();
-    reconcileScores();
+    if (needsFinalReconcile) {
+      reconcileScores(true);
+    } else {
+      reconcileScores();
+    }
     render();
     updateLiveIndicator(hasLive, true);
     return true;
