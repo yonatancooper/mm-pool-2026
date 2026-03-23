@@ -23,7 +23,7 @@
     },
     "St. John's": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "Northern Iowa": {
@@ -32,7 +32,7 @@
       "liveGame": null
     },
     "Kansas": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
@@ -62,7 +62,7 @@
       "liveGame": null
     },
     "UCLA": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
@@ -73,7 +73,7 @@
     },
     "Connecticut": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "Furman": {
@@ -107,7 +107,7 @@
       "liveGame": null
     },
     "Texas Tech": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
@@ -118,7 +118,7 @@
     },
     "Alabama": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "Hofstra": {
@@ -128,7 +128,7 @@
     },
     "Tennessee": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "Miami (OH)": {
@@ -142,7 +142,7 @@
       "liveGame": null
     },
     "Virginia": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
@@ -152,7 +152,7 @@
       "liveGame": null
     },
     "Kentucky": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
@@ -163,7 +163,7 @@
     },
     "Iowa State": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "Tennessee State": {
@@ -173,7 +173,7 @@
     },
     "Arizona": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "LIU": {
@@ -187,7 +187,7 @@
       "liveGame": null
     },
     "Utah State": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
@@ -237,7 +237,7 @@
       "liveGame": null
     },
     "Miami (Fla.)": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
@@ -248,7 +248,7 @@
     },
     "Purdue": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "Queens": {
@@ -257,7 +257,7 @@
       "liveGame": null
     },
     "Florida": {
-      "status": "active",
+      "status": "eliminated",
       "gamesPlayed": 1,
       "liveGame": null
     },
@@ -278,7 +278,7 @@
     },
     "Iowa": {
       "status": "active",
-      "gamesPlayed": 1,
+      "gamesPlayed": 2,
       "liveGame": null
     },
     "Vanderbilt": {
@@ -352,7 +352,8 @@
     },
     "Alex Condon": {
       "completedPts": [
-        13
+        13,
+        21
       ],
       "livePts": 0
     },
@@ -379,13 +380,15 @@
     },
     "Trey Kaufman-Renn": {
       "completedPts": [
-        25
+        25,
+        19
       ],
       "livePts": 0
     },
     "Thomas Haugh": {
       "completedPts": [
-        14
+        14,
+        19
       ],
       "livePts": 0
     },
@@ -398,19 +401,22 @@
     },
     "Braden Smith": {
       "completedPts": [
-        26
+        26,
+        12
       ],
       "livePts": 0
     },
     "Malik Thomas": {
       "completedPts": [
-        11
+        11,
+        12
       ],
       "livePts": 0
     },
     "Alex Karaban": {
       "completedPts": [
-        22
+        22,
+        27
       ],
       "livePts": 0
     },
@@ -422,26 +428,29 @@
     },
     "Graham Ike": {
       "completedPts": [
-        25,
+        19,
         25
       ],
       "livePts": 0
     },
     "Labaron Philon": {
       "completedPts": [
-        29
+        29,
+        9
       ],
       "livePts": 0
     },
     "Xaivian Lee": {
       "completedPts": [
-        10
+        10,
+        17
       ],
       "livePts": 0
     },
     "Darryn Peterson": {
       "completedPts": [
-        28
+        28,
+        21
       ],
       "livePts": 0
     },
@@ -454,7 +463,8 @@
     },
     "Christian Anderson": {
       "completedPts": [
-        18
+        18,
+        7
       ],
       "livePts": 0
     },
@@ -467,25 +477,28 @@
     },
     "Milan Momcilovic": {
       "completedPts": [
-        17
+        17,
+        20
       ],
       "livePts": 0
     },
     "Tarris Reed Jr.": {
       "completedPts": [
-        31
+        31,
+        10
       ],
       "livePts": 0
     },
     "Ja'Kobi Gillespie": {
       "completedPts": [
-        29
+        29,
+        21
       ],
       "livePts": 0
     },
     "Tyon Grant-Foster": {
       "completedPts": [
-        7,
+        9,
         7
       ],
       "livePts": 0
@@ -498,7 +511,8 @@
     },
     "Jaden Bradley": {
       "completedPts": [
-        7
+        7,
+        18
       ],
       "livePts": 0
     },
@@ -538,13 +552,15 @@
     },
     "Koa Peat": {
       "completedPts": [
-        15
+        15,
+        14
       ],
       "livePts": 0
     },
     "Patrick Ngongba": {
       "completedPts": [
-        9
+        9,
+        8
       ],
       "livePts": 0
     },
@@ -557,19 +573,22 @@
     },
     "Ivan Kharchenkov": {
       "completedPts": [
-        14
+        14,
+        9
       ],
       "livePts": 0
     },
     "Tamin Lipsey": {
       "completedPts": [
-        3
+        3,
+        26
       ],
       "livePts": 0
     },
     "Anthony Dell'Orso": {
       "completedPts": [
-        8
+        8,
+        3
       ],
       "livePts": 0
     },
@@ -589,13 +608,15 @@
     },
     "Motiejus Krivas": {
       "completedPts": [
-        9
+        9,
+        11
       ],
       "livePts": 0
     },
     "Fletcher Loyer": {
       "completedPts": [
-        14
+        14,
+        24
       ],
       "livePts": 0
     },
@@ -614,7 +635,8 @@
     },
     "Brayden Burries": {
       "completedPts": [
-        18
+        18,
+        16
       ],
       "livePts": 0
     },
@@ -633,7 +655,8 @@
     },
     "Zuby Ejiofor": {
       "completedPts": [
-        14
+        14,
+        18
       ],
       "livePts": 0
     },
@@ -666,7 +689,8 @@
     },
     "Boogie Fland": {
       "completedPts": [
-        16
+        16,
+        7
       ],
       "livePts": 0
     },
@@ -724,7 +748,8 @@
     },
     "Thijs De Ridder": {
       "completedPts": [
-        10
+        10,
+        22
       ],
       "livePts": 0
     }
@@ -737,7 +762,7 @@
       "newPpg": 10.3
     }
   },
-  "lastUpdated": "2026-03-22T15:35:16.589Z",
+  "lastUpdated": "2026-03-23T21:38:49.895Z",
   "_finalizedGameIds": [
     "401856489_Nebraska",
     "401856489_Troy",
@@ -816,17 +841,33 @@
     "401856534_Nebraska",
     "401856534_Vanderbilt",
     "401856536_Arkansas",
-    "401856536_High Point"
+    "401856536_High Point",
+    "401856564_Purdue",
+    "401856564_Miami (Fla.)",
+    "401856561_Iowa State",
+    "401856561_Kentucky",
+    "401856562_Virginia",
+    "401856562_Tennessee",
+    "401856558_Kansas",
+    "401856558_St. John's",
+    "401856563_Florida",
+    "401856563_Iowa",
+    "401856565_Arizona",
+    "401856565_Utah State",
+    "401856559_Connecticut",
+    "401856559_UCLA",
+    "401856560_Alabama",
+    "401856560_Texas Tech"
   ],
   "probBase": {
     "Duke": [
       1,
       1,
       1,
-      0.7321000000000001,
-      0.54681,
-      0.31511,
-      0.17643
+      0.7040900000000001,
+      0.5070100000000001,
+      0.31610000000000005,
+      0.17291
     ],
     "Siena": [
       1,
@@ -858,11 +899,11 @@
     "St. John's": [
       1,
       1,
-      0.61672,
-      0.19224000000000002,
-      0.11442000000000001,
-      0.04709000000000001,
-      0.01821
+      1,
+      0.29591,
+      0.16497,
+      0.07413,
+      0.027870000000000002
     ],
     "Northern Iowa": [
       1,
@@ -876,11 +917,11 @@
     "Kansas": [
       1,
       1,
-      0.38328,
-      0.07566,
-      0.033100000000000004,
-      0.01012,
-      0.0034000000000000002
+      0,
+      0,
+      0,
+      0,
+      0
     ],
     "Cal. Baptist": [
       1,
@@ -913,10 +954,10 @@
       1,
       1,
       1,
-      0.53071,
-      0.16499000000000003,
-      0.06139000000000001,
-      0.02237
+      0.48197000000000007,
+      0.15494000000000002,
+      0.06592,
+      0.022910000000000003
     ],
     "North Dakota State": [
       1,
@@ -930,11 +971,11 @@
     "UCLA": [
       1,
       1,
-      0.29645000000000005,
-      0.11147000000000001,
-      0.024730000000000002,
-      0.0068000000000000005,
-      0.0019000000000000002
+      0,
+      0,
+      0,
+      0,
+      0
     ],
     "UCF": [
       1,
@@ -948,11 +989,11 @@
     "Connecticut": [
       1,
       1,
-      0.70355,
-      0.35782,
-      0.11595000000000001,
-      0.04148,
-      0.01455
+      1,
+      0.51803,
+      0.17308,
+      0.07400000000000001,
+      0.02553
     ],
     "Furman": [
       1,
@@ -966,11 +1007,11 @@
     "Florida": [
       1,
       1,
-      0.8655900000000001,
-      0.6613600000000001,
-      0.34308000000000005,
-      0.19507000000000002,
-      0.10320000000000001
+      0,
+      0,
+      0,
+      0,
+      0
     ],
     "Prairie View": [
       1,
@@ -1002,11 +1043,11 @@
     "Iowa": [
       1,
       1,
-      0.13441,
-      0.05509000000000001,
-      0.01229,
-      0.00371,
-      0.001
+      1,
+      0.40711,
+      0.08303,
+      0.02346,
+      0.005880000000000001
     ],
     "Vanderbilt": [
       1,
@@ -1030,10 +1071,10 @@
       1,
       1,
       1,
-      0.28355,
-      0.07912000000000001,
-      0.02706,
-      0.008490000000000001
+      0.59289,
+      0.158,
+      0.05301,
+      0.0154
     ],
     "Troy": [
       1,
@@ -1067,9 +1108,9 @@
       1,
       1,
       0.38291000000000003,
-      0.19417,
-      0.09859000000000001,
-      0.04653
+      0.27379000000000003,
+      0.14142000000000002,
+      0.06631000000000001
     ],
     "Penn": [
       1,
@@ -1103,9 +1144,9 @@
       1,
       1,
       0.61709,
-      0.37134,
-      0.19358,
-      0.09313
+      0.48518000000000006,
+      0.25196,
+      0.1188
     ],
     "Idaho": [
       1,
@@ -1119,11 +1160,11 @@
     "Arizona": [
       1,
       1,
-      0.8902100000000001,
-      0.7290500000000001,
-      0.55598,
-      0.29525,
-      0.16033
+      1,
+      0.7969200000000001,
+      0.5674800000000001,
+      0.27445,
+      0.15032
     ],
     "LIU": [
       1,
@@ -1146,11 +1187,11 @@
     "Utah State": [
       1,
       1,
-      0.10979000000000001,
-      0.04553,
-      0.018400000000000003,
-      0.0036500000000000005,
-      0.0007800000000000001
+      0,
+      0,
+      0,
+      0,
+      0
     ],
     "Wisconsin": [
       1,
@@ -1174,10 +1215,10 @@
       1,
       1,
       1,
-      0.22542,
-      0.1092,
-      0.03121,
-      0.00952
+      0.20308,
+      0.09103000000000001,
+      0.02425,
+      0.00813
     ],
     "Hawaii": [
       1,
@@ -1201,10 +1242,10 @@
       1,
       1,
       1,
-      0.27058000000000004,
-      0.050050000000000004,
-      0.009170000000000001,
-      0.0018100000000000002
+      0.229,
+      0.040470000000000006,
+      0.0068200000000000005,
+      0.00144
     ],
     "NC State": [
       0,
@@ -1236,11 +1277,11 @@
     "Miami (Fla.)": [
       1,
       1,
-      0.22482000000000002,
-      0.12652000000000002,
-      0.026680000000000002,
-      0.00574,
-      0.0012200000000000002
+      0,
+      0,
+      0,
+      0,
+      0
     ],
     "Missouri": [
       1,
@@ -1254,11 +1295,11 @@
     "Purdue": [
       1,
       1,
-      0.7751800000000001,
-      0.6029000000000001,
-      0.23969000000000001,
-      0.10306000000000001,
-      0.04691000000000001
+      1,
+      0.771,
+      0.30102,
+      0.12411000000000001,
+      0.05987000000000001
     ],
     "Queens": [
       1,
@@ -1273,10 +1314,10 @@
       1,
       1,
       1,
-      0.8253800000000001,
-      0.57193,
-      0.35834000000000005,
-      0.20676000000000003
+      0.82408,
+      0.5262100000000001,
+      0.331,
+      0.20286
     ],
     "UMBC": [
       0,
@@ -1317,11 +1358,11 @@
     "Texas Tech": [
       1,
       1,
-      0.43423000000000006,
-      0.057260000000000005,
-      0.017650000000000002,
-      0.00464,
-      0.00099
+      0,
+      0,
+      0,
+      0,
+      0
     ],
     "Akron": [
       1,
@@ -1335,11 +1376,11 @@
     "Alabama": [
       1,
       1,
-      0.56577,
-      0.11736,
-      0.05127,
-      0.019790000000000002,
-      0.00666
+      1,
+      0.17592000000000002,
+      0.07099000000000001,
+      0.02884,
+      0.01178
     ],
     "Hofstra": [
       1,
@@ -1353,11 +1394,11 @@
     "Tennessee": [
       1,
       1,
-      0.48796000000000006,
-      0.18246,
-      0.0517,
-      0.019260000000000003,
-      0.00683
+      1,
+      0.31510000000000005,
+      0.08403000000000001,
+      0.031180000000000003,
+      0.012150000000000001
     ],
     "Miami (OH)": [
       1,
@@ -1380,11 +1421,11 @@
     "Virginia": [
       1,
       1,
-      0.51204,
-      0.18854,
-      0.05133000000000001,
-      0.01836,
-      0.006
+      0,
+      0,
+      0,
+      0,
+      0
     ],
     "Wright State": [
       1,
@@ -1398,11 +1439,11 @@
     "Kentucky": [
       1,
       1,
-      0.29736,
-      0.13403,
-      0.030230000000000003,
-      0.009420000000000001,
-      0.00302
+      0,
+      0,
+      0,
+      0,
+      0
     ],
     "Santa Clara": [
       1,
@@ -1416,11 +1457,11 @@
     "Iowa State": [
       1,
       1,
-      0.70264,
-      0.49497,
-      0.22589,
-      0.12211000000000001,
-      0.059960000000000006
+      1,
+      0.6849000000000001,
+      0.31877000000000005,
+      0.17935,
+      0.09784000000000001
     ],
     "Tennessee State": [
       1,
