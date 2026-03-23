@@ -1104,12 +1104,27 @@ async function reconcileScores() {
   const now = Date.now();
   if (now - _lastReconcile < RECONCILE_INTERVAL) return;
   _lastReconcile = now;
-  console.log("[MM Pool] Reconciliation starting...");
+  console.log("[MM Pool] Reconciliation starting — fetching ALL tournament dates...");
   try {
-    const resp = await fetch(`${WORKER_URL}/scoreboard?_t=${Date.now()}`, {signal: AbortSignal.timeout(10000)});
-    if (!resp.ok) { console.warn("[MM Pool] Reconcile: scoreboard fetch failed"); return; }
-    const data = await resp.json();
-    if (!data.games) return;
+    // Fetch scoreboards for EVERY date from tournament start (March 19) through today
+    // This ensures we see ALL games, not just recent ones
+    const TOURNEY_START = new Date("2026-03-19T00:00:00");
+    const today = new Date();
+    const fmt = d => d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+
+    const allGames = [];
+    const seen = new Set();
+    for (let d = new Date(TOURNEY_START); d <= today; d.setDate(d.getDate() + 1)) {
+      const dateStr = fmt(d);
+      try {
+        const resp = await fetch(`${WORKER_URL}/scoreboard?date=${dateStr}&_t=${Date.now()}`, {signal: AbortSignal.timeout(10000)});
+        if (!resp.ok) continue;
+        const data = await resp.json();
+        for (const g of (data.games || [])) {
+          if (!seen.has(g.id)) { seen.add(g.id); allGames.push(g); }
+        }
+      } catch(e) { console.warn(`[MM Pool] Reconcile scoreboard ${dateStr} failed:`, e.message); }
+    }
 
     const ourTeams = new Set();
     for (const p of PLAYERS_DEFAULT) {
@@ -1118,11 +1133,11 @@ async function reconcileScores() {
     }
 
     // Phase 1: Collect ALL verified scores per player across ALL final games
-    const playerTruth = {}; // playerKey → [pts1, pts2, ...] in game order
-    const teamResults = {}; // team → {wins, eliminated}
+    const playerTruth = {};
+    const teamResults = {};
 
-    const finalGames = data.games.filter(g => g.status.type === "STATUS_FINAL" || g.status.completed);
-    console.log(`[MM Pool] Reconcile: ${finalGames.length} final games to verify`);
+    const finalGames = allGames.filter(g => g.status.type === "STATUS_FINAL" || g.status.completed);
+    console.log(`[MM Pool] Reconcile: ${allGames.length} total games, ${finalGames.length} final`);
 
     for (const game of finalGames) {
       const homeName = resolveESPNTeam(game.home.name, game.home.abbrev);
@@ -1154,18 +1169,18 @@ async function reconcileScores() {
       } catch(e) { console.warn("[MM Pool] Reconcile box score failed:", e.message); }
     }
 
-    // Phase 2: Compare collected truth against state
+    // Phase 2: Compare truth (which now has COMPLETE tournament history) against state
     let fixes = 0;
 
     for (const [teamName, result] of Object.entries(teamResults)) {
       const ts = state.teams[teamName];
       if (!ts) continue;
       if (result.eliminated && ts.status !== "eliminated") {
-        console.log(`[MM Pool] Reconcile fix: ${teamName} → eliminated`);
+        console.log(`[MM Pool] Reconcile fix: ${teamName} -> eliminated`);
         ts.status = "eliminated"; ts.liveGame = null; fixes++;
       }
       if (result.wins > (ts.gamesPlayed || 0)) {
-        console.log(`[MM Pool] Reconcile fix: ${teamName} gamesPlayed ${ts.gamesPlayed||0} → ${result.wins}`);
+        console.log(`[MM Pool] Reconcile fix: ${teamName} gamesPlayed ${ts.gamesPlayed||0} -> ${result.wins}`);
         ts.gamesPlayed = result.wins; fixes++;
       }
       if (ts.liveGame) { ts.liveGame = null; fixes++; }
@@ -1178,10 +1193,16 @@ async function reconcileScores() {
       const truthTotal = truthScores.reduce((a,b) => a+b, 0);
       const stateTotal = completed.reduce((a,b) => a+b, 0);
 
-      if (completed.length < truthScores.length || (completed.length === truthScores.length && stateTotal !== truthTotal)) {
-        console.log(`[MM Pool] Reconcile fix: ${playerKey} [${completed}] → [${truthScores}]`);
+      // Only replace if truth has MORE data or same count but different total
+      // Never replace with fewer entries (that means truth is incomplete)
+      if (truthScores.length > completed.length) {
+        console.log(`[MM Pool] Reconcile fix: ${playerKey} [${completed}] -> [${truthScores}] (more entries)`);
+        ps.completedPts = [...truthScores]; ps.livePts = 0; fixes++;
+      } else if (truthScores.length === completed.length && stateTotal !== truthTotal) {
+        console.log(`[MM Pool] Reconcile fix: ${playerKey} [${completed}] -> [${truthScores}] (same count, different total)`);
         ps.completedPts = [...truthScores]; ps.livePts = 0; fixes++;
       }
+      // Clear stale livePts
       if (ps.livePts > 0) {
         const pDef = PLAYERS_DEFAULT.find(p=>p.name===playerKey);
         const sw = state.playerSwaps[playerKey];
