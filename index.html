@@ -919,7 +919,8 @@ if(IS_ADMIN){
       const sw=state.playerSwaps[p.name];const teamName=sw?sw.newTeam:p.team;
       const ts=state.teams[teamName];if(!ts)continue;const gp=ts.gamesPlayed||0;
       if(gp===0&&ts.status!=="eliminated"&&(ps.completedPts||[]).length>0){ps.completedPts=[];ps.livePts=0;fixed=true;}
-      if(gp>0&&(ps.completedPts||[]).length>gp){ps.completedPts=ps.completedPts.slice(ps.completedPts.length-gp);fixed=true;}
+      const expectedEntries=gp+(ts.status==="eliminated"?1:0);
+      if(expectedEntries>0&&(ps.completedPts||[]).length>expectedEntries){ps.completedPts=ps.completedPts.slice(ps.completedPts.length-expectedEntries);fixed=true;}
       if(ps.livePts>0&&!ts.liveGame){ps.livePts=0;fixed=true;}
     }
     if(fixed)saveState();
