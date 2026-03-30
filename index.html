@@ -879,7 +879,7 @@ function saveAdmin(){
   for(const p of PLAYERS_DEFAULT){
     const s=p.name.replace(/[^a-zA-Z0-9]/g,'');
     const ce=document.getElementById(`pc-${s}`);const le=document.getElementById(`pl-${s}`);
-    if(ce)state.players[p.name].completedPts=ce.value.split(",").map(x=>parseFloat(x.trim())).filter(n=>!isNaN(n)&&n>0);
+    if(ce)state.players[p.name].completedPts=ce.value.split(",").map(x=>parseFloat(x.trim())).filter(n=>!isNaN(n)&&n>=0);
     if(le)state.players[p.name].livePts=parseInt(le.value)||0;
   }
   for(const team of relevantTeams){
